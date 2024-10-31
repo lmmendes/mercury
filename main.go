@@ -2,14 +2,15 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"mercury/internal/api"
+	"mercury/internal/config"
 	"mercury/internal/core"
 	"mercury/internal/smtpserver"
 
@@ -17,19 +18,37 @@ import (
 )
 
 func main() {
-	db, err := sql.Open("sqlite3", "./email.db")
+	// Parse command line flags
+	configFile := flag.String("config", "config/default.yaml", "Path to configuration file")
+	flag.Parse()
+
+	// Load configuration
+	cfg, err := config.Load(*configFile)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf("Failed to load configuration: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Initialize database
+	db, err := sql.Open(cfg.Database.Driver, cfg.Database.URL)
+	if err != nil {
+		fmt.Printf("Failed to connect to database: %v\n", err)
+		os.Exit(1)
 	}
 	defer db.Close()
 
-	config := core.LoadConfig()
-	logger := log.Default()
+	// Create core with new config
+	core := core.NewCore(&core.Config{
+		SMTPPort:    cfg.Server.SMTP.Port,
+		HTTPPort:    cfg.Server.HTTP.Port,
+		DatabaseURL: cfg.Database.URL,
+		LogLevel:    cfg.Logging.Level,
+	}, db)
 
-	core := core.NewCore(config, db, logger)
+	core.Logger.Info("Starting application with configuration from %s", *configFile)
 
 	if err := core.Repository.InitializeTables(); err != nil {
-		logger.Fatal("Failed to initialize database tables:", err)
+		core.Logger.Fatal("Failed to initialize database tables: %v", err)
 	}
 
 	apiServer := api.NewServer(core)
@@ -44,7 +63,7 @@ func main() {
 
 	// Start HTTP server with goroutine
 	go func() {
-		logger.Println("Starting HTTP server at", config.HTTPPort)
+		core.Logger.Info("Starting HTTP server at %s", cfg.Server.HTTP.Port)
 		if err := apiServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errChan <- fmt.Errorf("HTTP server error: %v", err)
 		}
@@ -52,7 +71,7 @@ func main() {
 
 	// Start SMTP server with goroutine
 	go func() {
-		logger.Println("Starting SMTP server at", config.SMTPPort)
+		core.Logger.Info("Starting SMTP server at %s", cfg.Server.SMTP.Port)
 		if err := smtpSrv.ListenAndServe(); err != nil {
 			errChan <- fmt.Errorf("SMTP server error: %v", err)
 		}
@@ -61,9 +80,9 @@ func main() {
 	// Wait for shutdown signal or error
 	select {
 	case <-stop:
-		logger.Println("Shutting down servers...")
+		core.Logger.Info("Shutting down servers...")
 		// Implement graceful shutdown here
 	case err := <-errChan:
-		logger.Fatal(err)
+		core.Logger.Fatal("Server error: %v", err)
 	}
 }

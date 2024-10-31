@@ -1,7 +1,7 @@
 package core
 
 import (
-	"log"
+	"mercury/internal/logger"
 	"mercury/internal/models"
 	"mercury/internal/storage"
 )
@@ -16,7 +16,7 @@ type InboxService interface {
 
 type inboxService struct {
 	repo   storage.Repository
-	logger *log.Logger
+	logger *logger.Logger
 }
 
 func NewInboxService(core *Core) InboxService {
@@ -27,21 +27,48 @@ func NewInboxService(core *Core) InboxService {
 }
 
 func (s *inboxService) Create(inbox *models.Inbox) error {
-	return s.repo.CreateInbox(inbox)
+	if err := s.repo.CreateInbox(inbox); err != nil {
+		s.logger.Error("Failed to create inbox: %v", err)
+		return err
+	}
+	s.logger.Info("Created inbox %d for account %d", inbox.ID, inbox.AccountID)
+	return nil
 }
 
 func (s *inboxService) Get(id int) (*models.Inbox, error) {
-	return s.repo.GetInbox(id)
+	inbox, err := s.repo.GetInbox(id)
+	if err != nil {
+		s.logger.Error("Failed to get inbox %d: %v", id, err)
+		return nil, err
+	}
+	s.logger.Debug("Retrieved inbox: %d", id)
+	return inbox, nil
 }
 
 func (s *inboxService) Update(inbox *models.Inbox) error {
-	return s.repo.UpdateInbox(inbox)
+	if err := s.repo.UpdateInbox(inbox); err != nil {
+		s.logger.Error("Failed to update inbox %d: %v", inbox.ID, err)
+		return err
+	}
+	s.logger.Info("Updated inbox: %d", inbox.ID)
+	return nil
 }
 
 func (s *inboxService) Delete(id int) error {
-	return s.repo.DeleteInbox(id)
+	if err := s.repo.DeleteInbox(id); err != nil {
+		s.logger.Error("Failed to delete inbox %d: %v", id, err)
+		return err
+	}
+	s.logger.Info("Deleted inbox: %d", id)
+	return nil
 }
 
 func (s *inboxService) GetByAccountID(accountID int) ([]*models.Inbox, error) {
-	return s.repo.ListInboxesByAccount(accountID)
+	inboxes, err := s.repo.ListInboxesByAccount(accountID)
+	if err != nil {
+		s.logger.Error("Failed to list inboxes for account %d: %v", accountID, err)
+		return nil, err
+	}
+	s.logger.Debug("Retrieved %d inboxes for account %d", len(inboxes), accountID)
+	return inboxes, nil
 }

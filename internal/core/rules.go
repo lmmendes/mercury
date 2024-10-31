@@ -1,7 +1,7 @@
 package core
 
 import (
-	"log"
+	"mercury/internal/logger"
 	"mercury/internal/models"
 	"mercury/internal/storage"
 )
@@ -16,7 +16,7 @@ type RuleService interface {
 
 type ruleService struct {
 	repo   storage.Repository
-	logger *log.Logger
+	logger *logger.Logger
 }
 
 func NewRuleService(core *Core) RuleService {
@@ -27,21 +27,48 @@ func NewRuleService(core *Core) RuleService {
 }
 
 func (s *ruleService) Create(rule *models.Rule) error {
-	return s.repo.CreateRule(rule)
+	if err := s.repo.CreateRule(rule); err != nil {
+		s.logger.Error("Failed to create rule: %v", err)
+		return err
+	}
+	s.logger.Info("Created rule %d for inbox %d", rule.ID, rule.InboxID)
+	return nil
 }
 
 func (s *ruleService) Get(id int) (*models.Rule, error) {
-	return s.repo.GetRule(id)
+	rule, err := s.repo.GetRule(id)
+	if err != nil {
+		s.logger.Error("Failed to get rule %d: %v", id, err)
+		return nil, err
+	}
+	s.logger.Debug("Retrieved rule: %d", id)
+	return rule, nil
 }
 
 func (s *ruleService) Update(rule *models.Rule) error {
-	return s.repo.UpdateRule(rule)
+	if err := s.repo.UpdateRule(rule); err != nil {
+		s.logger.Error("Failed to update rule %d: %v", rule.ID, err)
+		return err
+	}
+	s.logger.Info("Updated rule: %d", rule.ID)
+	return nil
 }
 
 func (s *ruleService) Delete(id int) error {
-	return s.repo.DeleteRule(id)
+	if err := s.repo.DeleteRule(id); err != nil {
+		s.logger.Error("Failed to delete rule %d: %v", id, err)
+		return err
+	}
+	s.logger.Info("Deleted rule: %d", id)
+	return nil
 }
 
 func (s *ruleService) GetByInboxID(inboxID int) ([]*models.Rule, error) {
-	return s.repo.ListRulesByInbox(inboxID)
+	rules, err := s.repo.ListRulesByInbox(inboxID)
+	if err != nil {
+		s.logger.Error("Failed to list rules for inbox %d: %v", inboxID, err)
+		return nil, err
+	}
+	s.logger.Debug("Retrieved %d rules for inbox %d", len(rules), inboxID)
+	return rules, nil
 }

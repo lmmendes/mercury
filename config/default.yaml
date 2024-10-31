@@ -1,0 +1,14 @@
+server:
+  http:
+    port: ":8080"
+  smtp:
+    port: ":1025"
+    domain: "localhost"
+    username: ""
+    password: ""
+database:
+  driver: "sqlite3"
+  url: "./email.db"
+logging:
+  level: "info"
+  format: "json"

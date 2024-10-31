@@ -2,20 +2,22 @@ package core
 
 import (
 	"database/sql"
-	"log"
+	"mercury/internal/logger"
 	"mercury/internal/models"
 	"mercury/internal/storage"
+	"os"
 )
 
 type Config struct {
 	SMTPPort    string
 	HTTPPort    string
 	DatabaseURL string
+	LogLevel    logger.Level
 }
 
 type Core struct {
 	Config     *Config
-	Logger     *log.Logger
+	Logger     *logger.Logger
 	Repository storage.Repository
 
 	AccountService AccountService
@@ -24,7 +26,10 @@ type Core struct {
 	MessageService MessageService
 }
 
-func NewCore(config *Config, db *sql.DB, logger *log.Logger) *Core {
+func NewCore(config *Config, db *sql.DB) *Core {
+	// Create logger with stdout only
+	logger := logger.New(os.Stdout, config.LogLevel)
+
 	core := &Core{
 		Config:     config,
 		Logger:     logger,
@@ -44,6 +49,7 @@ func LoadConfig() *Config {
 		SMTPPort:    ":1025",
 		HTTPPort:    ":8080",
 		DatabaseURL: "./email.db",
+		LogLevel:    logger.INFO, // Default log level
 	}
 }
 

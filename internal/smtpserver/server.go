@@ -63,7 +63,15 @@ func (s *Session) Data(r io.Reader) error {
 		Receiver: s.to,
 	}
 
-	return s.core.StoreMessage(message)
+	s.core.Logger.Info("Received email from %s to %s", s.from, s.to)
+
+	if err := s.core.StoreMessage(message); err != nil {
+		s.core.Logger.Error("Failed to store message: %v", err)
+		return err
+	}
+
+	s.core.Logger.Debug("Stored message successfully")
+	return nil
 }
 
 func (s *Session) Reset() {}
