@@ -52,7 +52,7 @@ type User struct {
 
 func main() {
 	var err error
-	db, err = sql.Open("sqlite3", "./email.db")
+	db, err = sql.Open("sqlite3", "./database.sqlite3")
 	if err != nil {
 		log.Fatal(err)
 	}
