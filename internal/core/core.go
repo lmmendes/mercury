@@ -27,7 +27,6 @@ type Core struct {
 }
 
 func NewCore(config *Config, db *sql.DB) *Core {
-	// Create logger with stdout only
 	logger := logger.New(os.Stdout, config.LogLevel)
 
 	core := &Core{
@@ -49,7 +48,7 @@ func LoadConfig() *Config {
 		SMTPPort:    ":1025",
 		HTTPPort:    ":8080",
 		DatabaseURL: "./email.db",
-		LogLevel:    logger.INFO, // Default log level
+		LogLevel:    logger.INFO,
 	}
 }
 

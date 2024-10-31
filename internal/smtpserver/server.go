@@ -81,7 +81,7 @@ func (s *Session) Logout() error {
 }
 
 func (s *Session) AuthPlain(username, password string) error {
-	return nil // For now, accept all auth
+	return nil // TODO: For now, accept all auth
 }
 
 func readAll(r io.Reader) string {

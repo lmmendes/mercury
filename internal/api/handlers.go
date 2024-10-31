@@ -2,14 +2,11 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"mercury/internal/models"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gorilla/mux"
-	"golang.org/x/net/context"
 )
 
 func (s *Server) createAccount(w http.ResponseWriter, r *http.Request) {
@@ -29,29 +26,12 @@ func (s *Server) createAccount(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) getAccounts(w http.ResponseWriter, r *http.Request) {
-	// Create channels for results and errors
-	accountsChan := make(chan []*models.Account, 1)
-	errChan := make(chan error, 1)
-
-	// Fetch accounts in a goroutine
-	go func() {
-		accounts, err := s.core.AccountService.List()
-		if err != nil {
-			errChan <- err
-			return
-		}
-		accountsChan <- accounts
-	}()
-
-	// Wait for result or timeout
-	select {
-	case accounts := <-accountsChan:
-		json.NewEncoder(w).Encode(accounts)
-	case err := <-errChan:
+	accounts, err := s.core.AccountService.List()
+	if err != nil {
 		s.core.HandleError(w, err, http.StatusInternalServerError)
-	case <-time.After(10 * time.Second):
-		s.core.HandleError(w, errors.New("request timeout"), http.StatusGatewayTimeout)
+		return
 	}
+	json.NewEncoder(w).Encode(accounts)
 }
 
 func (s *Server) getAccount(w http.ResponseWriter, r *http.Request) {
@@ -240,29 +220,10 @@ func (s *Server) deleteRule(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) getMessages(w http.ResponseWriter, r *http.Request) {
 	inboxID, _ := strconv.Atoi(mux.Vars(r)["inboxId"])
-
-	// Create a context with timeout
-	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-	defer cancel()
-
-	messagesChan := make(chan []*models.Message, 1)
-	errChan := make(chan error, 1)
-
-	go func() {
-		messages, err := s.core.MessageService.GetByInboxID(inboxID)
-		if err != nil {
-			errChan <- err
-			return
-		}
-		messagesChan <- messages
-	}()
-
-	select {
-	case messages := <-messagesChan:
-		json.NewEncoder(w).Encode(messages)
-	case err := <-errChan:
+	messages, err := s.core.MessageService.GetByInboxID(inboxID)
+	if err != nil {
 		s.core.HandleError(w, err, http.StatusInternalServerError)
-	case <-ctx.Done():
-		s.core.HandleError(w, ctx.Err(), http.StatusGatewayTimeout)
+		return
 	}
+	json.NewEncoder(w).Encode(messages)
 }
