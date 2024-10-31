@@ -1,229 +1,226 @@
 package api
 
 import (
-	"encoding/json"
 	"mercury/internal/models"
 	"net/http"
 	"strconv"
 
-	"github.com/gorilla/mux"
+	"github.com/labstack/echo/v4"
 )
 
-func (s *Server) createAccount(w http.ResponseWriter, r *http.Request) {
+func (s *Server) createAccount(c echo.Context) error {
 	var account models.Account
-	if err := json.NewDecoder(r.Body).Decode(&account); err != nil {
-		s.core.HandleError(w, err, http.StatusBadRequest)
-		return
+	if err := c.Bind(&account); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
+
+	if err := c.Validate(&account); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
 	if err := s.core.AccountService.Create(&account); err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(account)
+	return c.JSON(http.StatusCreated, account)
 }
 
-func (s *Server) getAccounts(w http.ResponseWriter, r *http.Request) {
+func (s *Server) getAccounts(c echo.Context) error {
 	accounts, err := s.core.AccountService.List()
 	if err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
-	json.NewEncoder(w).Encode(accounts)
+	return c.JSON(http.StatusOK, accounts)
 }
 
-func (s *Server) getAccount(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+func (s *Server) getAccount(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
 	account, err := s.core.AccountService.Get(id)
 	if err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	if account == nil {
-		s.core.HandleError(w, err, http.StatusNotFound)
-		return
+		return s.core.HandleError(err, http.StatusNotFound)
 	}
-
-	json.NewEncoder(w).Encode(account)
+	return c.JSON(http.StatusOK, account)
 }
 
-func (s *Server) updateAccount(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+func (s *Server) updateAccount(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
 	var account models.Account
-	if err := json.NewDecoder(r.Body).Decode(&account); err != nil {
-		s.core.HandleError(w, err, http.StatusBadRequest)
-		return
+	if err := c.Bind(&account); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 	account.ID = id
 
+	if err := c.Validate(&account); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
+
 	if err := s.core.AccountService.Update(&account); err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return c.NoContent(http.StatusNoContent)
 }
 
-func (s *Server) deleteAccount(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(mux.Vars(r)["id"])
+func (s *Server) deleteAccount(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
 	if err := s.core.AccountService.Delete(id); err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
-
-	w.WriteHeader(http.StatusNoContent)
+	return c.NoContent(http.StatusNoContent)
 }
 
-func (s *Server) createInbox(w http.ResponseWriter, r *http.Request) {
-	accountID, _ := strconv.Atoi(mux.Vars(r)["accountId"])
+func (s *Server) createInbox(c echo.Context) error {
+	accountID, _ := strconv.Atoi(c.Param("accountId"))
 	var inbox models.Inbox
-	if err := json.NewDecoder(r.Body).Decode(&inbox); err != nil {
-		s.core.HandleError(w, err, http.StatusBadRequest)
-		return
+	if err := c.Bind(&inbox); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 	inbox.AccountID = accountID
 
-	if err := s.core.InboxService.Create(&inbox); err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+	if err := c.Validate(&inbox); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(inbox)
+	if err := s.core.InboxService.Create(&inbox); err != nil {
+		return s.core.HandleError(err, http.StatusInternalServerError)
+	}
+
+	return c.JSON(http.StatusCreated, inbox)
 }
 
-func (s *Server) getInboxes(w http.ResponseWriter, r *http.Request) {
-	accountID, _ := strconv.Atoi(mux.Vars(r)["accountId"])
+func (s *Server) getInboxes(c echo.Context) error {
+	accountID, _ := strconv.Atoi(c.Param("accountId"))
 	inboxes, err := s.core.InboxService.GetByAccountID(accountID)
 	if err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
-
-	json.NewEncoder(w).Encode(inboxes)
+	return c.JSON(http.StatusOK, inboxes)
 }
 
-func (s *Server) getInbox(w http.ResponseWriter, r *http.Request) {
-	inboxID, _ := strconv.Atoi(mux.Vars(r)["inboxId"])
+func (s *Server) getInbox(c echo.Context) error {
+	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
 	inbox, err := s.core.InboxService.Get(inboxID)
 	if err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	if inbox == nil {
-		s.core.HandleError(w, err, http.StatusNotFound)
-		return
+		return s.core.HandleError(err, http.StatusNotFound)
 	}
-
-	json.NewEncoder(w).Encode(inbox)
+	return c.JSON(http.StatusOK, inbox)
 }
 
-func (s *Server) updateInbox(w http.ResponseWriter, r *http.Request) {
-	inboxID, _ := strconv.Atoi(mux.Vars(r)["inboxId"])
+func (s *Server) updateInbox(c echo.Context) error {
+	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
+	accountID, _ := strconv.Atoi(c.Param("accountId"))
+
 	var inbox models.Inbox
-	if err := json.NewDecoder(r.Body).Decode(&inbox); err != nil {
-		s.core.HandleError(w, err, http.StatusBadRequest)
-		return
+	if err := c.Bind(&inbox); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
 	}
+
+	// Set both ID and AccountID before validation
 	inbox.ID = inboxID
+	inbox.AccountID = accountID
+
+	if err := c.Validate(&inbox); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
 
 	if err := s.core.InboxService.Update(&inbox); err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return c.NoContent(http.StatusNoContent)
 }
 
-func (s *Server) deleteInbox(w http.ResponseWriter, r *http.Request) {
-	inboxID, _ := strconv.Atoi(mux.Vars(r)["inboxId"])
+func (s *Server) deleteInbox(c echo.Context) error {
+	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
 	if err := s.core.InboxService.Delete(inboxID); err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
-
-	w.WriteHeader(http.StatusNoContent)
+	return c.NoContent(http.StatusNoContent)
 }
 
-func (s *Server) createRule(w http.ResponseWriter, r *http.Request) {
-	inboxID, _ := strconv.Atoi(mux.Vars(r)["inboxId"])
+func (s *Server) createRule(c echo.Context) error {
+	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
 	var rule models.Rule
-	if err := json.NewDecoder(r.Body).Decode(&rule); err != nil {
-		s.core.HandleError(w, err, http.StatusBadRequest)
-		return
+	if err := c.Bind(&rule); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 	rule.InboxID = inboxID
 
-	if err := s.core.RuleService.Create(&rule); err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+	if err := c.Validate(&rule); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(rule)
+	if err := s.core.RuleService.Create(&rule); err != nil {
+		return s.core.HandleError(err, http.StatusInternalServerError)
+	}
+
+	return c.JSON(http.StatusCreated, rule)
 }
 
-func (s *Server) getRules(w http.ResponseWriter, r *http.Request) {
-	inboxID, _ := strconv.Atoi(mux.Vars(r)["inboxId"])
+func (s *Server) getRules(c echo.Context) error {
+	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
 	rules, err := s.core.RuleService.GetByInboxID(inboxID)
 	if err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
-
-	json.NewEncoder(w).Encode(rules)
+	return c.JSON(http.StatusOK, rules)
 }
 
-func (s *Server) getRule(w http.ResponseWriter, r *http.Request) {
-	ruleID, _ := strconv.Atoi(mux.Vars(r)["ruleId"])
+func (s *Server) getRule(c echo.Context) error {
+	ruleID, _ := strconv.Atoi(c.Param("ruleId"))
 	rule, err := s.core.RuleService.Get(ruleID)
 	if err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	if rule == nil {
-		s.core.HandleError(w, err, http.StatusNotFound)
-		return
+		return s.core.HandleError(err, http.StatusNotFound)
 	}
-
-	json.NewEncoder(w).Encode(rule)
+	return c.JSON(http.StatusOK, rule)
 }
 
-func (s *Server) updateRule(w http.ResponseWriter, r *http.Request) {
-	ruleID, _ := strconv.Atoi(mux.Vars(r)["ruleId"])
+func (s *Server) updateRule(c echo.Context) error {
+	ruleID, _ := strconv.Atoi(c.Param("ruleId"))
+	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
+
 	var rule models.Rule
-	if err := json.NewDecoder(r.Body).Decode(&rule); err != nil {
-		s.core.HandleError(w, err, http.StatusBadRequest)
-		return
+	if err := c.Bind(&rule); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
 	}
+
+	// Set both ID and InboxID before validation
 	rule.ID = ruleID
+	rule.InboxID = inboxID
+
+	if err := c.Validate(&rule); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
 
 	if err := s.core.RuleService.Update(&rule); err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return c.NoContent(http.StatusNoContent)
 }
 
-func (s *Server) deleteRule(w http.ResponseWriter, r *http.Request) {
-	ruleID, _ := strconv.Atoi(mux.Vars(r)["ruleId"])
+func (s *Server) deleteRule(c echo.Context) error {
+	ruleID, _ := strconv.Atoi(c.Param("ruleId"))
 	if err := s.core.RuleService.Delete(ruleID); err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
-
-	w.WriteHeader(http.StatusNoContent)
+	return c.NoContent(http.StatusNoContent)
 }
 
-func (s *Server) getMessages(w http.ResponseWriter, r *http.Request) {
-	inboxID, _ := strconv.Atoi(mux.Vars(r)["inboxId"])
+func (s *Server) getMessages(c echo.Context) error {
+	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
 	messages, err := s.core.MessageService.GetByInboxID(inboxID)
 	if err != nil {
-		s.core.HandleError(w, err, http.StatusInternalServerError)
-		return
+		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
-	json.NewEncoder(w).Encode(messages)
+	return c.JSON(http.StatusOK, messages)
 }
