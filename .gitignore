@@ -1,3 +1,32 @@
+# Database files
 *.sqlite3
+*.db
+
+# OS generated files
 .DS_Store
 .idea
+.vscode
+
+# Go specific
+/bin/
+/vendor/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with 'go test -c'
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# Log files
+*.log
+
+# Environment variables
+.env
