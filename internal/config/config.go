@@ -17,10 +17,14 @@ type Config struct {
 		} `koanf:"http"`
 		SMTP struct {
 			Port     string `koanf:"port"`
-			Domain   string `koanf:"domain"`
+			Hostname string `koanf:"hostname"`
 			Username string `koanf:"username"`
 			Password string `koanf:"password"`
 		} `koanf:"smtp"`
+		IMAP struct {
+			Port     string `koanf:"port"`
+			Hostname string `koanf:"hostname"`
+		}
 	} `koanf:"server"`
 	Database struct {
 		Driver string `koanf:"driver"`
@@ -28,7 +32,7 @@ type Config struct {
 	} `koanf:"database"`
 	Logging struct {
 		Level  logger.Level `koanf:"level"`
-		Format string      `koanf:"format"`
+		Format string       `koanf:"format"`
 	} `koanf:"logging"`
 }
 
@@ -38,19 +42,22 @@ func Load(configFile string) (*Config, error) {
 	// Load default configuration
 	defaultConfig := []byte(`
 server:
-  http:
-    port: ":8080"
-  smtp:
-    port: ":1025"
-    domain: "localhost"
-    username: ""
-    password: ""
+	http:
+    	port: ":8080"
+     smtp:
+	    port: ":1025"
+	    hostname: "localhost"
+	    username: ""
+	    password: ""
+    imap:
+   		port: ":1025"
+	    domain: "localhost"
 database:
-  driver: "sqlite3"
-  url: "./email.db"
+	driver: "sqlite3"
+	url: "./email.db"
 logging:
-  level: "info"
-  format: "json"
+	level: "info"
+	format: "json"
 `)
 
 	if err := k.Load(file.Provider(configFile), yaml.Parser()); err != nil {

@@ -360,7 +360,7 @@ func (r *repository) InitializeTables() error {
 		`CREATE TABLE IF NOT EXISTS inboxes (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			account_id INTEGER,
-			email TEXT,
+			email TEXT UNIQUE,
 			FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
 		)`,
 		`CREATE TABLE IF NOT EXISTS rules (
@@ -383,7 +383,16 @@ func (r *repository) InitializeTables() error {
 		`CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			account_id INTEGER,
-			username TEXT,
+			username TEXT NOT NULL UNIQUE,
+			password TEXT NULL,
+			email TEXT NOT NULL UNIQUE,
+			name TEXT NOT NULL,
+			status TEXT CHECK( status IN ('enabled', 'disabled') ),
+			kind TEXT CHECK( kind IN ('user', 'api') ),
+			password_login BOOLEAN NOT NULL DEFAULT false,
+			loggedin_at      TIMESTAMP NULL,
+			created_at       DEFAULT CURRENT_TIMESTAMP,
+			updated_at       DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
 		)`,
 	}
