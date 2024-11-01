@@ -11,7 +11,7 @@ type RuleService interface {
 	Get(id int) (*models.Rule, error)
 	Update(rule *models.Rule) error
 	Delete(id int) error
-	GetByInboxID(inboxID int) ([]*models.Rule, error)
+	ListByInbox(inboxID, limit, offset int) (*models.PaginatedResponse, error)
 }
 
 type ruleService struct {
@@ -63,12 +63,20 @@ func (s *ruleService) Delete(id int) error {
 	return nil
 }
 
-func (s *ruleService) GetByInboxID(inboxID int) ([]*models.Rule, error) {
-	rules, err := s.repo.ListRulesByInbox(inboxID)
+func (s *ruleService) ListByInbox(inboxID, limit, offset int) (*models.PaginatedResponse, error) {
+	rules, total, err := s.repo.ListRulesByInbox(inboxID, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to list rules for inbox %d: %v", inboxID, err)
 		return nil, err
 	}
-	s.logger.Debug("Retrieved %d rules for inbox %d", len(rules), inboxID)
-	return rules, nil
+
+	response := &models.PaginatedResponse{
+		Data: rules,
+	}
+	response.Pagination.Total = total
+	response.Pagination.Limit = limit
+	response.Pagination.Offset = offset
+
+	s.logger.Debug("Retrieved %d rules for inbox %d (total: %d)", len(rules), inboxID, total)
+	return response, nil
 }

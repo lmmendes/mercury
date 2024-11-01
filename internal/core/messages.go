@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"mercury/internal/logger"
 	"mercury/internal/models"
 	"mercury/internal/storage"
@@ -8,7 +9,7 @@ import (
 
 type MessageService interface {
 	Store(message *models.Message) error
-	GetByInboxID(inboxID int) ([]*models.Message, error)
+	ListByInbox(inboxID, limit, offset int) (*models.PaginatedResponse, error)
 }
 
 type messageService struct {
@@ -25,7 +26,7 @@ func NewMessageService(core *Core) MessageService {
 
 func (s *messageService) Store(message *models.Message) error {
 	// First try to match against rules
-	rules, err := s.repo.ListRules()
+	rules, _, err := s.repo.ListRules(1000, 0)
 	if err != nil {
 		s.logger.Error("Error querying rules: %v", err)
 		return err
@@ -46,17 +47,30 @@ func (s *messageService) Store(message *models.Message) error {
 		return err
 	}
 
+	if inbox == nil {
+		s.logger.Error("No inbox found for email %s", message.Receiver)
+		return fmt.Errorf("no inbox found for email address: %s", message.Receiver)
+	}
+
 	message.InboxID = inbox.ID
 	s.logger.Info("Storing message in inbox %d", inbox.ID)
 	return s.repo.CreateMessage(message)
 }
 
-func (s *messageService) GetByInboxID(inboxID int) ([]*models.Message, error) {
-	messages, err := s.repo.ListMessagesByInbox(inboxID)
+func (s *messageService) ListByInbox(inboxID, limit, offset int) (*models.PaginatedResponse, error) {
+	messages, total, err := s.repo.ListMessagesByInbox(inboxID, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to list messages for inbox %d: %v", inboxID, err)
 		return nil, err
 	}
-	s.logger.Debug("Retrieved %d messages for inbox %d", len(messages), inboxID)
-	return messages, nil
+
+	response := &models.PaginatedResponse{
+		Data: messages,
+	}
+	response.Pagination.Total = total
+	response.Pagination.Limit = limit
+	response.Pagination.Offset = offset
+
+	s.logger.Debug("Retrieved %d messages for inbox %d (total: %d)", len(messages), inboxID, total)
+	return response, nil
 }

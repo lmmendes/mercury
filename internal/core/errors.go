@@ -14,6 +14,10 @@ type APIError struct {
 	Details interface{} `json:"details,omitempty"`
 }
 
+func (e *APIError) Error() string {
+	return fmt.Sprintf("%d: %s", e.Code, e.Message)
+}
+
 type ValidationError struct {
 	Field  string `json:"field"`
 	Rule   string `json:"rule"`
@@ -21,7 +25,23 @@ type ValidationError struct {
 	Reason string `json:"reason"`
 }
 
+var (
+	ErrNotFound = &APIError{
+		Code:    http.StatusNotFound,
+		Message: "resource not found",
+	}
+)
+
 func (c *Core) HandleError(err error, code int) error {
+	if err == nil {
+		// If err is nil but we're handling a not found case
+		if code == http.StatusNotFound {
+			return echo.NewHTTPError(http.StatusNotFound, ErrNotFound)
+		}
+		// For other nil error cases, just return nil
+		return nil
+	}
+
 	if code >= 500 {
 		c.Logger.ErrorWithStack(err)
 	} else {
@@ -46,23 +66,14 @@ func (c *Core) HandleError(err error, code int) error {
 		})
 	}
 
-	// Handle not found errors
-	if err == ErrNotFound {
-		return echo.NewHTTPError(http.StatusNotFound, APIError{
-			Code:    http.StatusNotFound,
-			Message: err.Error(),
-		})
+	// Handle API errors
+	if apiErr, ok := err.(*APIError); ok {
+		return echo.NewHTTPError(apiErr.Code, apiErr)
 	}
 
+	// Handle generic errors
 	return echo.NewHTTPError(code, APIError{
 		Code:    code,
 		Message: err.Error(),
 	})
 }
-
-// Common errors
-var (
-	ErrNotFound     = fmt.Errorf("resource not found")
-	ErrUnauthorized = fmt.Errorf("unauthorized")
-	ErrForbidden    = fmt.Errorf("forbidden")
-)

@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"mercury/internal/models"
+
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 type Repository interface {
@@ -12,27 +15,27 @@ type Repository interface {
 	GetAccount(id int) (*models.Account, error)
 	UpdateAccount(account *models.Account) error
 	DeleteAccount(id int) error
-	ListAccounts() ([]*models.Account, error)
+	ListAccounts(limit, offset int) ([]*models.Account, int, error)
 
 	// Inbox operations
 	CreateInbox(inbox *models.Inbox) error
 	GetInbox(id int) (*models.Inbox, error)
 	UpdateInbox(inbox *models.Inbox) error
 	DeleteInbox(id int) error
-	ListInboxesByAccount(accountID int) ([]*models.Inbox, error)
+	ListInboxesByAccount(accountID, limit, offset int) ([]*models.Inbox, int, error)
 
 	// Rule operations
 	CreateRule(rule *models.Rule) error
 	GetRule(id int) (*models.Rule, error)
 	UpdateRule(rule *models.Rule) error
 	DeleteRule(id int) error
-	ListRulesByInbox(inboxID int) ([]*models.Rule, error)
+	ListRulesByInbox(inboxID, limit, offset int) ([]*models.Rule, int, error)
 
 	// Message operations
 	CreateMessage(message *models.Message) error
 	GetMessage(id int) (*models.Message, error)
-	ListMessagesByInbox(inboxID int) ([]*models.Message, error)
-	ListRules() ([]*models.Rule, error)
+	ListMessagesByInbox(inboxID, limit, offset int) ([]*models.Message, int, error)
+	ListRules(limit, offset int) ([]*models.Rule, int, error)
 	GetInboxByEmail(email string) (*models.Inbox, error)
 
 	// Initialize tables
@@ -40,29 +43,21 @@ type Repository interface {
 }
 
 type repository struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
-func NewRepository(db *sql.DB) Repository {
+func NewRepository(db *sqlx.DB) Repository {
 	return &repository{db: db}
 }
 
 func (r *repository) CreateAccount(account *models.Account) error {
-	result, err := r.db.Exec("INSERT INTO accounts (name) VALUES (?)", account.Name)
-	if err != nil {
-		return err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return err
-	}
-	account.ID = int(id)
-	return nil
+	query := `INSERT INTO accounts (name) VALUES ($1) RETURNING id`
+	return r.db.QueryRow(query, account.Name).Scan(&account.ID)
 }
 
 func (r *repository) GetAccount(id int) (*models.Account, error) {
 	var account models.Account
-	err := r.db.QueryRow("SELECT id, name FROM accounts WHERE id = ?", id).Scan(&account.ID, &account.Name)
+	err := r.db.Get(&account, "SELECT id, name FROM accounts WHERE id = $1", id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -73,7 +68,7 @@ func (r *repository) GetAccount(id int) (*models.Account, error) {
 }
 
 func (r *repository) UpdateAccount(account *models.Account) error {
-	result, err := r.db.Exec("UPDATE accounts SET name = ? WHERE id = ?", account.Name, account.ID)
+	result, err := r.db.Exec("UPDATE accounts SET name = $1 WHERE id = $2", account.Name, account.ID)
 	if err != nil {
 		return err
 	}
@@ -88,7 +83,7 @@ func (r *repository) UpdateAccount(account *models.Account) error {
 }
 
 func (r *repository) DeleteAccount(id int) error {
-	result, err := r.db.Exec("DELETE FROM accounts WHERE id = ?", id)
+	result, err := r.db.Exec("DELETE FROM accounts WHERE id = $1", id)
 	if err != nil {
 		return err
 	}
@@ -102,45 +97,32 @@ func (r *repository) DeleteAccount(id int) error {
 	return nil
 }
 
-func (r *repository) ListAccounts() ([]*models.Account, error) {
-	rows, err := r.db.Query("SELECT id, name FROM accounts")
+func (r *repository) ListAccounts(limit, offset int) ([]*models.Account, int, error) {
+	var total int
+	err := r.db.Get(&total, "SELECT COUNT(*) FROM accounts")
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	defer rows.Close()
 
 	var accounts []*models.Account
-	for rows.Next() {
-		account := &models.Account{}
-		if err := rows.Scan(&account.ID, &account.Name); err != nil {
-			return nil, err
-		}
-		accounts = append(accounts, account)
+	err = r.db.Select(&accounts,
+		"SELECT id, name FROM accounts ORDER BY id LIMIT $1 OFFSET $2",
+		limit, offset)
+	if err != nil {
+		return nil, 0, err
 	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return accounts, nil
+
+	return accounts, total, nil
 }
 
 func (r *repository) CreateInbox(inbox *models.Inbox) error {
-	result, err := r.db.Exec("INSERT INTO inboxes (account_id, email) VALUES (?, ?)",
-		inbox.AccountID, inbox.Email)
-	if err != nil {
-		return err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return err
-	}
-	inbox.ID = int(id)
-	return nil
+	query := `INSERT INTO inboxes (account_id, email) VALUES ($1, $2) RETURNING id`
+	return r.db.QueryRow(query, inbox.AccountID, inbox.Email).Scan(&inbox.ID)
 }
 
 func (r *repository) GetInbox(id int) (*models.Inbox, error) {
 	var inbox models.Inbox
-	err := r.db.QueryRow("SELECT id, account_id, email FROM inboxes WHERE id = ?", id).
-		Scan(&inbox.ID, &inbox.AccountID, &inbox.Email)
+	err := r.db.Get(&inbox, "SELECT id, account_id, email FROM inboxes WHERE id = $1", id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -151,8 +133,7 @@ func (r *repository) GetInbox(id int) (*models.Inbox, error) {
 }
 
 func (r *repository) UpdateInbox(inbox *models.Inbox) error {
-	result, err := r.db.Exec("UPDATE inboxes SET email = ? WHERE id = ?",
-		inbox.Email, inbox.ID)
+	result, err := r.db.Exec("UPDATE inboxes SET email = $1 WHERE id = $2", inbox.Email, inbox.ID)
 	if err != nil {
 		return err
 	}
@@ -167,7 +148,7 @@ func (r *repository) UpdateInbox(inbox *models.Inbox) error {
 }
 
 func (r *repository) DeleteInbox(id int) error {
-	result, err := r.db.Exec("DELETE FROM inboxes WHERE id = ?", id)
+	result, err := r.db.Exec("DELETE FROM inboxes WHERE id = $1", id)
 	if err != nil {
 		return err
 	}
@@ -181,42 +162,32 @@ func (r *repository) DeleteInbox(id int) error {
 	return nil
 }
 
-func (r *repository) ListInboxesByAccount(accountID int) ([]*models.Inbox, error) {
-	rows, err := r.db.Query("SELECT id, account_id, email FROM inboxes WHERE account_id = ?", accountID)
+func (r *repository) ListInboxesByAccount(accountID, limit, offset int) ([]*models.Inbox, int, error) {
+	var total int
+	err := r.db.Get(&total, "SELECT COUNT(*) FROM inboxes WHERE account_id = $1", accountID)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	defer rows.Close()
 
 	var inboxes []*models.Inbox
-	for rows.Next() {
-		inbox := &models.Inbox{}
-		if err := rows.Scan(&inbox.ID, &inbox.AccountID, &inbox.Email); err != nil {
-			return nil, err
-		}
-		inboxes = append(inboxes, inbox)
+	err = r.db.Select(&inboxes,
+		"SELECT id, account_id, email FROM inboxes WHERE account_id = $1 ORDER BY id LIMIT $2 OFFSET $3",
+		accountID, limit, offset)
+	if err != nil {
+		return nil, 0, err
 	}
-	return inboxes, rows.Err()
+
+	return inboxes, total, nil
 }
 
 func (r *repository) CreateRule(rule *models.Rule) error {
-	result, err := r.db.Exec("INSERT INTO rules (inbox_id, sender, receiver, subject) VALUES (?, ?, ?, ?)",
-		rule.InboxID, rule.Sender, rule.Receiver, rule.Subject)
-	if err != nil {
-		return err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return err
-	}
-	rule.ID = int(id)
-	return nil
+	query := `INSERT INTO rules (inbox_id, sender, receiver, subject) VALUES ($1, $2, $3, $4) RETURNING id`
+	return r.db.QueryRow(query, rule.InboxID, rule.Sender, rule.Receiver, rule.Subject).Scan(&rule.ID)
 }
 
 func (r *repository) GetRule(id int) (*models.Rule, error) {
 	var rule models.Rule
-	err := r.db.QueryRow("SELECT id, inbox_id, sender, receiver, subject FROM rules WHERE id = ?", id).
-		Scan(&rule.ID, &rule.InboxID, &rule.Sender, &rule.Receiver, &rule.Subject)
+	err := r.db.Get(&rule, "SELECT id, inbox_id, sender, receiver, subject FROM rules WHERE id = $1", id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -227,7 +198,7 @@ func (r *repository) GetRule(id int) (*models.Rule, error) {
 }
 
 func (r *repository) UpdateRule(rule *models.Rule) error {
-	result, err := r.db.Exec("UPDATE rules SET sender = ?, receiver = ?, subject = ? WHERE id = ?",
+	result, err := r.db.Exec("UPDATE rules SET sender = $1, receiver = $2, subject = $3 WHERE id = $4",
 		rule.Sender, rule.Receiver, rule.Subject, rule.ID)
 	if err != nil {
 		return err
@@ -243,7 +214,7 @@ func (r *repository) UpdateRule(rule *models.Rule) error {
 }
 
 func (r *repository) DeleteRule(id int) error {
-	result, err := r.db.Exec("DELETE FROM rules WHERE id = ?", id)
+	result, err := r.db.Exec("DELETE FROM rules WHERE id = $1", id)
 	if err != nil {
 		return err
 	}
@@ -257,42 +228,32 @@ func (r *repository) DeleteRule(id int) error {
 	return nil
 }
 
-func (r *repository) ListRulesByInbox(inboxID int) ([]*models.Rule, error) {
-	rows, err := r.db.Query("SELECT id, inbox_id, sender, receiver, subject FROM rules WHERE inbox_id = ?", inboxID)
+func (r *repository) ListRulesByInbox(inboxID, limit, offset int) ([]*models.Rule, int, error) {
+	var total int
+	err := r.db.Get(&total, "SELECT COUNT(*) FROM rules WHERE inbox_id = $1", inboxID)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	defer rows.Close()
 
 	var rules []*models.Rule
-	for rows.Next() {
-		rule := &models.Rule{}
-		if err := rows.Scan(&rule.ID, &rule.InboxID, &rule.Sender, &rule.Receiver, &rule.Subject); err != nil {
-			return nil, err
-		}
-		rules = append(rules, rule)
+	err = r.db.Select(&rules,
+		"SELECT id, inbox_id, sender, receiver, subject FROM rules WHERE inbox_id = $1 ORDER BY id LIMIT $2 OFFSET $3",
+		inboxID, limit, offset)
+	if err != nil {
+		return nil, 0, err
 	}
-	return rules, rows.Err()
+
+	return rules, total, nil
 }
 
 func (r *repository) CreateMessage(message *models.Message) error {
-	result, err := r.db.Exec("INSERT INTO messages (inbox_id, sender, receiver, subject, body) VALUES (?, ?, ?, ?, ?)",
-		message.InboxID, message.Sender, message.Receiver, message.Subject, message.Body)
-	if err != nil {
-		return err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return err
-	}
-	message.ID = int(id)
-	return nil
+	query := `INSERT INTO messages (inbox_id, sender, receiver, subject, body) VALUES ($1, $2, $3, $4, $5) RETURNING id`
+	return r.db.QueryRow(query, message.InboxID, message.Sender, message.Receiver, message.Subject, message.Body).Scan(&message.ID)
 }
 
 func (r *repository) GetMessage(id int) (*models.Message, error) {
 	var message models.Message
-	err := r.db.QueryRow("SELECT id, inbox_id, sender, receiver, subject, body FROM messages WHERE id = ?", id).
-		Scan(&message.ID, &message.InboxID, &message.Sender, &message.Receiver, &message.Subject, &message.Body)
+	err := r.db.Get(&message, "SELECT id, inbox_id, sender, receiver, subject, body FROM messages WHERE id = $1", id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -302,46 +263,45 @@ func (r *repository) GetMessage(id int) (*models.Message, error) {
 	return &message, nil
 }
 
-func (r *repository) ListMessagesByInbox(inboxID int) ([]*models.Message, error) {
-	rows, err := r.db.Query("SELECT id, inbox_id, sender, receiver, subject, body FROM messages WHERE inbox_id = ?", inboxID)
+func (r *repository) ListMessagesByInbox(inboxID, limit, offset int) ([]*models.Message, int, error) {
+	var total int
+	err := r.db.Get(&total, "SELECT COUNT(*) FROM messages WHERE inbox_id = $1", inboxID)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	defer rows.Close()
 
 	var messages []*models.Message
-	for rows.Next() {
-		message := &models.Message{}
-		if err := rows.Scan(&message.ID, &message.InboxID, &message.Sender, &message.Receiver, &message.Subject, &message.Body); err != nil {
-			return nil, err
-		}
-		messages = append(messages, message)
+	err = r.db.Select(&messages,
+		"SELECT id, inbox_id, sender, receiver, subject, body FROM messages WHERE inbox_id = $1 ORDER BY id LIMIT $2 OFFSET $3",
+		inboxID, limit, offset)
+	if err != nil {
+		return nil, 0, err
 	}
-	return messages, rows.Err()
+
+	return messages, total, nil
 }
 
-func (r *repository) ListRules() ([]*models.Rule, error) {
-	rows, err := r.db.Query("SELECT id, inbox_id, sender, receiver, subject FROM rules")
+func (r *repository) ListRules(limit, offset int) ([]*models.Rule, int, error) {
+	var total int
+	err := r.db.Get(&total, "SELECT COUNT(*) FROM rules")
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	defer rows.Close()
 
 	var rules []*models.Rule
-	for rows.Next() {
-		rule := &models.Rule{}
-		if err := rows.Scan(&rule.ID, &rule.InboxID, &rule.Sender, &rule.Receiver, &rule.Subject); err != nil {
-			return nil, err
-		}
-		rules = append(rules, rule)
+	err = r.db.Select(&rules,
+		"SELECT id, inbox_id, sender, receiver, subject FROM rules ORDER BY id LIMIT $1 OFFSET $2",
+		limit, offset)
+	if err != nil {
+		return nil, 0, err
 	}
-	return rules, rows.Err()
+
+	return rules, total, nil
 }
 
 func (r *repository) GetInboxByEmail(email string) (*models.Inbox, error) {
 	var inbox models.Inbox
-	err := r.db.QueryRow("SELECT id, account_id, email FROM inboxes WHERE email = ?", email).
-		Scan(&inbox.ID, &inbox.AccountID, &inbox.Email)
+	err := r.db.Get(&inbox, "SELECT id, account_id, email FROM inboxes WHERE email = $1", email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -354,45 +314,47 @@ func (r *repository) GetInboxByEmail(email string) (*models.Inbox, error) {
 func (r *repository) InitializeTables() error {
 	queries := []string{
 		`CREATE TABLE IF NOT EXISTS accounts (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			id SERIAL PRIMARY KEY,
 			name TEXT
 		)`,
 		`CREATE TABLE IF NOT EXISTS inboxes (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			account_id INTEGER,
-			email TEXT,
-			FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+			id SERIAL PRIMARY KEY,
+			account_id INTEGER REFERENCES accounts(id) ON DELETE CASCADE,
+			email TEXT
 		)`,
 		`CREATE TABLE IF NOT EXISTS rules (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			inbox_id INTEGER,
+			id SERIAL PRIMARY KEY,
+			inbox_id INTEGER REFERENCES inboxes(id) ON DELETE CASCADE,
 			sender TEXT,
 			receiver TEXT,
-			subject TEXT,
-			FOREIGN KEY (inbox_id) REFERENCES inboxes(id) ON DELETE CASCADE
+			subject TEXT
 		)`,
 		`CREATE TABLE IF NOT EXISTS messages (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			inbox_id INTEGER,
+			id SERIAL PRIMARY KEY,
+			inbox_id INTEGER REFERENCES inboxes(id) ON DELETE CASCADE,
 			sender TEXT,
 			receiver TEXT,
 			subject TEXT,
-			body TEXT,
-			FOREIGN KEY (inbox_id) REFERENCES inboxes(id) ON DELETE CASCADE
+			body TEXT
 		)`,
 		`CREATE TABLE IF NOT EXISTS users (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			account_id INTEGER,
-			username TEXT,
-			FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+			id SERIAL PRIMARY KEY,
+			account_id INTEGER REFERENCES accounts(id) ON DELETE CASCADE,
+			username TEXT
 		)`,
 	}
 
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return err
+	}
+
 	for _, query := range queries {
-		if _, err := r.db.Exec(query); err != nil {
+		if _, err := tx.Exec(query); err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
 
-	return nil
+	return tx.Commit()
 }

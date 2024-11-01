@@ -11,7 +11,7 @@ type InboxService interface {
 	Get(id int) (*models.Inbox, error)
 	Update(inbox *models.Inbox) error
 	Delete(id int) error
-	GetByAccountID(accountID int) ([]*models.Inbox, error)
+	ListByAccount(accountID, limit, offset int) (*models.PaginatedResponse, error)
 }
 
 type inboxService struct {
@@ -63,12 +63,20 @@ func (s *inboxService) Delete(id int) error {
 	return nil
 }
 
-func (s *inboxService) GetByAccountID(accountID int) ([]*models.Inbox, error) {
-	inboxes, err := s.repo.ListInboxesByAccount(accountID)
+func (s *inboxService) ListByAccount(accountID, limit, offset int) (*models.PaginatedResponse, error) {
+	inboxes, total, err := s.repo.ListInboxesByAccount(accountID, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to list inboxes for account %d: %v", accountID, err)
 		return nil, err
 	}
-	s.logger.Debug("Retrieved %d inboxes for account %d", len(inboxes), accountID)
-	return inboxes, nil
+
+	response := &models.PaginatedResponse{
+		Data: inboxes,
+	}
+	response.Pagination.Total = total
+	response.Pagination.Limit = limit
+	response.Pagination.Offset = offset
+
+	s.logger.Debug("Retrieved %d inboxes for account %d (total: %d)", len(inboxes), accountID, total)
+	return response, nil
 }

@@ -11,7 +11,7 @@ type AccountService interface {
 	Get(id int) (*models.Account, error)
 	Update(account *models.Account) error
 	Delete(id int) error
-	List() ([]*models.Account, error)
+	List(limit, offset int) (*models.PaginatedResponse, error)
 }
 
 type accountService struct {
@@ -63,12 +63,20 @@ func (s *accountService) Delete(id int) error {
 	return nil
 }
 
-func (s *accountService) List() ([]*models.Account, error) {
-	accounts, err := s.repo.ListAccounts()
+func (s *accountService) List(limit, offset int) (*models.PaginatedResponse, error) {
+	accounts, total, err := s.repo.ListAccounts(limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to list accounts: %v", err)
 		return nil, err
 	}
-	s.logger.Debug("Retrieved %d accounts", len(accounts))
-	return accounts, nil
+
+	response := &models.PaginatedResponse{
+		Data: accounts,
+	}
+	response.Pagination.Total = total
+	response.Pagination.Limit = limit
+	response.Pagination.Offset = offset
+
+	s.logger.Debug("Retrieved %d accounts (total: %d)", len(accounts), total)
+	return response, nil
 }
