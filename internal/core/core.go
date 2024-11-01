@@ -11,6 +11,7 @@ import (
 type Config struct {
 	SMTPPort    string
 	HTTPPort    string
+	IMAPPort    string
 	DatabaseURL string
 	LogLevel    logger.Level
 }
@@ -47,7 +48,8 @@ func LoadConfig() *Config {
 	return &Config{
 		SMTPPort:    ":1025",
 		HTTPPort:    ":8080",
-		DatabaseURL: "./email.db",
+		IMAPPort:    ":1143",
+		DatabaseURL: "./database.sqlite3",
 		LogLevel:    logger.INFO,
 	}
 }

@@ -12,7 +12,8 @@ import (
 	"mercury/internal/api"
 	"mercury/internal/config"
 	"mercury/internal/core"
-	"mercury/internal/smtpserver"
+	"mercury/internal/imap"
+	"mercury/internal/smtp"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -41,6 +42,7 @@ func main() {
 	core := core.NewCore(&core.Config{
 		SMTPPort:    cfg.Server.SMTP.Port,
 		HTTPPort:    cfg.Server.HTTP.Port,
+		IMAPPort:    cfg.Server.IMAP.Port,
 		DatabaseURL: cfg.Database.URL,
 		LogLevel:    cfg.Logging.Level,
 	}, db)
@@ -52,7 +54,8 @@ func main() {
 	}
 
 	apiServer := api.NewServer(core)
-	smtpSrv := smtpserver.NewServer(core)
+	smtpServer := smtp.NewServer(core)
+	imapServer := imap.NewServer(core)
 
 	// Create a channel to listen for interrupt signals
 	stop := make(chan os.Signal, 1)
@@ -72,8 +75,16 @@ func main() {
 	// Start SMTP server with goroutine
 	go func() {
 		core.Logger.Info("Starting SMTP server at %s", cfg.Server.SMTP.Port)
-		if err := smtpSrv.ListenAndServe(); err != nil {
+		if err := smtpServer.ListenAndServe(); err != nil {
 			errChan <- fmt.Errorf("SMTP server error: %v", err)
+		}
+	}()
+
+	// Start IMAP server with goroutine
+	go func() {
+		core.Logger.Info("Starting IMAP server at %s", cfg.Server.IMAP.Port)
+		if err := imapServer.ListenAndServe(); err != nil {
+			errChan <- fmt.Errorf("IMAP server error: %v", err)
 		}
 	}()
 

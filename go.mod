@@ -3,6 +3,7 @@ module mercury
 go 1.22
 
 require (
+	github.com/emersion/go-imap v1.2.1
 	github.com/emersion/go-message v0.18.1
 	github.com/emersion/go-smtp v0.20.2
 	github.com/go-playground/validator/v10 v10.22.1
@@ -12,6 +13,7 @@ require (
 	github.com/knadh/koanf/v2 v2.1.1
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/mattn/go-sqlite3 v1.14.22
+	github.com/volatiletech/null/v9 v9.0.0
 )
 
 require (

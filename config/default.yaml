@@ -6,9 +6,12 @@ server:
     domain: "localhost"
     username: ""
     password: ""
+  imap:
+    port: ":1143"
+    hostname: "localhost"
 database:
   driver: "sqlite3"
-  url: "./email.db"
+  url: "./database.sqlite3"
 logging:
   level: "info"
   format: "json"

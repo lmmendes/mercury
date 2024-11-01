@@ -1,4 +1,4 @@
-package smtpserver
+package smtp
 
 import (
 	"bytes"
@@ -11,54 +11,54 @@ import (
 	"github.com/emersion/go-smtp"
 )
 
-type Server struct {
+type SmtpServer struct {
 	core *core.Core
 	smtp *smtp.Server
 }
 
-func NewServer(core *core.Core) *Server {
-	be := &Backend{core: core}
+type SmtpBackend struct {
+	core *core.Core
+}
+
+type SmtpSession struct {
+	core *core.Core
+	from string
+	to   string
+}
+
+func NewServer(core *core.Core) *SmtpServer {
+	be := &SmtpBackend{core: core}
 	s := smtp.NewServer(be)
 
 	s.Addr = core.Config.SMTPPort
 	s.Domain = "localhost"
 	s.AllowInsecureAuth = true
 
-	return &Server{
+	return &SmtpServer{
 		core: core,
 		smtp: s,
 	}
 }
 
-func (s *Server) ListenAndServe() error {
+func (s *SmtpServer) ListenAndServe() error {
 	return s.smtp.ListenAndServe()
 }
 
-type Backend struct {
-	core *core.Core
+func (be *SmtpBackend) NewSession(_ *smtp.Conn) (smtp.Session, error) {
+	return &SmtpSession{core: be.core}, nil
 }
 
-func (be *Backend) NewSession(_ *smtp.Conn) (smtp.Session, error) {
-	return &Session{core: be.core}, nil
-}
-
-type Session struct {
-	core *core.Core
-	from string
-	to   string
-}
-
-func (s *Session) Mail(from string, _ *smtp.MailOptions) error {
+func (s *SmtpSession) Mail(from string, _ *smtp.MailOptions) error {
 	s.from = from
 	return nil
 }
 
-func (s *Session) Rcpt(to string, _ *smtp.RcptOptions) error {
+func (s *SmtpSession) Rcpt(to string, _ *smtp.RcptOptions) error {
 	s.to = to
 	return nil
 }
 
-func (s *Session) Data(r io.Reader) error {
+func (s *SmtpSession) Data(r io.Reader) error {
 	// Parse the email to get the subject
 	buf := new(bytes.Buffer)
 	if _, err := buf.ReadFrom(r); err != nil {
@@ -111,12 +111,12 @@ func (s *Session) Data(r io.Reader) error {
 	return nil
 }
 
-func (s *Session) Reset() {}
+func (s *SmtpSession) Reset() {}
 
-func (s *Session) Logout() error {
+func (s *SmtpSession) Logout() error {
 	return nil
 }
 
-func (s *Session) AuthPlain(username, password string) error {
+func (s *SmtpSession) AuthPlain(username, password string) error {
 	return nil // TODO: For now, accept all auth
 }
