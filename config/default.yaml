@@ -11,7 +11,7 @@ server:
     hostname: "localhost"
 database:
   driver: "sqlite3"
-  url: "./email.db"
+  url: "./database.sqlite3"
 logging:
   level: "info"
   format: "json"

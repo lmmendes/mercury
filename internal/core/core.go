@@ -49,7 +49,7 @@ func LoadConfig() *Config {
 		SMTPPort:    ":1025",
 		HTTPPort:    ":8080",
 		IMAPPort:    ":1143",
-		DatabaseURL: "./email.db",
+		DatabaseURL: "./database.sqlite3",
 		LogLevel:    logger.INFO,
 	}
 }
