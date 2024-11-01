@@ -5,8 +5,13 @@ meta {
 }
 
 get {
-  url: {{base_url}}/accounts/1/inboxes
+  url: {{base_url}}/accounts/1/inboxes?limit=10&offset=0
   auth: none
+}
+
+query {
+  limit: 10
+  offset: 0
 }
 
 headers {
@@ -14,8 +19,11 @@ headers {
 }
 
 tests {
-  test("should return inboxes list", function() {
+  test("should return paginated inboxes list", function() {
     expect(res.status).to.equal(200);
-    expect(res.body).to.be.an('array');
+    expect(res.body).to.have.property('data').that.is.an('array');
+    expect(res.body).to.have.property('pagination').that.includes.all.keys(['total', 'limit', 'offset']);
+    expect(res.body.pagination.limit).to.equal(10);
+    expect(res.body.pagination.offset).to.equal(0);
   });
 }
