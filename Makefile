@@ -1,7 +1,7 @@
 .PHONY: dev db-up db-down db-clean test
 
 dev: db-up
-	go run main.go
+	go run ./cmd/mercury
 
 db-up:
 	docker compose up -d db
