@@ -26,11 +26,24 @@ func (s *Server) createAccount(c echo.Context) error {
 }
 
 func (s *Server) getAccounts(c echo.Context) error {
-	accounts, err := s.core.AccountService.List()
+	var query models.PaginationQuery
+	if err := c.Bind(&query); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
+
+	if query.Limit == 0 {
+		query.Limit = 10
+	}
+
+	if err := c.Validate(&query); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
+
+	response, err := s.core.AccountService.List(query.Limit, query.Offset)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
-	return c.JSON(http.StatusOK, accounts)
+	return c.JSON(http.StatusOK, response)
 }
 
 func (s *Server) getAccount(c echo.Context) error {
@@ -40,7 +53,7 @@ func (s *Server) getAccount(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	if account == nil {
-		return s.core.HandleError(err, http.StatusNotFound)
+		return s.core.HandleError(nil, http.StatusNotFound)
 	}
 	return c.JSON(http.StatusOK, account)
 }
@@ -93,11 +106,25 @@ func (s *Server) createInbox(c echo.Context) error {
 
 func (s *Server) getInboxes(c echo.Context) error {
 	accountID, _ := strconv.Atoi(c.Param("accountId"))
-	inboxes, err := s.core.InboxService.GetByAccountID(accountID)
+
+	var query models.PaginationQuery
+	if err := c.Bind(&query); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
+
+	if query.Limit == 0 {
+		query.Limit = 10
+	}
+
+	if err := c.Validate(&query); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
+
+	response, err := s.core.InboxService.ListByAccount(accountID, query.Limit, query.Offset)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
-	return c.JSON(http.StatusOK, inboxes)
+	return c.JSON(http.StatusOK, response)
 }
 
 func (s *Server) getInbox(c echo.Context) error {
@@ -107,7 +134,7 @@ func (s *Server) getInbox(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	if inbox == nil {
-		return s.core.HandleError(err, http.StatusNotFound)
+		return s.core.HandleError(nil, http.StatusNotFound)
 	}
 	return c.JSON(http.StatusOK, inbox)
 }
@@ -165,11 +192,25 @@ func (s *Server) createRule(c echo.Context) error {
 
 func (s *Server) getRules(c echo.Context) error {
 	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
-	rules, err := s.core.RuleService.GetByInboxID(inboxID)
+
+	var query models.PaginationQuery
+	if err := c.Bind(&query); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
+
+	if query.Limit == 0 {
+		query.Limit = 10
+	}
+
+	if err := c.Validate(&query); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
+
+	response, err := s.core.RuleService.ListByInbox(inboxID, query.Limit, query.Offset)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
-	return c.JSON(http.StatusOK, rules)
+	return c.JSON(http.StatusOK, response)
 }
 
 func (s *Server) getRule(c echo.Context) error {
@@ -179,7 +220,7 @@ func (s *Server) getRule(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	if rule == nil {
-		return s.core.HandleError(err, http.StatusNotFound)
+		return s.core.HandleError(nil, http.StatusNotFound)
 	}
 	return c.JSON(http.StatusOK, rule)
 }
@@ -218,9 +259,23 @@ func (s *Server) deleteRule(c echo.Context) error {
 
 func (s *Server) getMessages(c echo.Context) error {
 	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
-	messages, err := s.core.MessageService.GetByInboxID(inboxID)
+
+	var query models.PaginationQuery
+	if err := c.Bind(&query); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
+
+	if query.Limit == 0 {
+		query.Limit = 10
+	}
+
+	if err := c.Validate(&query); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
+
+	response, err := s.core.MessageService.ListByInbox(inboxID, query.Limit, query.Offset)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
-	return c.JSON(http.StatusOK, messages)
+	return c.JSON(http.StatusOK, response)
 }

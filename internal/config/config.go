@@ -3,12 +3,20 @@ package config
 import (
 	"mercury/internal/logger"
 	"strings"
+	"time"
 
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
 )
+
+type DatabaseConfig struct {
+	URL             string        `koanf:"url"`
+	MaxOpenConns    int           `koanf:"max_open_conns"`
+	MaxIdleConns    int           `koanf:"max_idle_conns"`
+	ConnMaxLifetime time.Duration `koanf:"conn_max_lifetime"`
+}
 
 type Config struct {
 	Server struct {
@@ -26,11 +34,8 @@ type Config struct {
 			Hostname string `koanf:"hostname"`
 		}
 	} `koanf:"server"`
-	Database struct {
-		Driver string `koanf:"driver"`
-		URL    string `koanf:"url"`
-	} `koanf:"database"`
-	Logging struct {
+	Database DatabaseConfig `koanf:"database"`
+	Logging  struct {
 		Level  logger.Level `koanf:"level"`
 		Format string       `koanf:"format"`
 	} `koanf:"logging"`
@@ -42,19 +47,21 @@ func Load(configFile string) (*Config, error) {
 	// Load default configuration
 	defaultConfig := []byte(`
 server:
-	http:
-    	port: ":8080"
-     smtp:
-	    port: ":1025"
-	    hostname: "localhost"
-	    username: ""
-	    password: ""
-    imap:
-   		port: ":1025"
-	    domain: "localhost"
+  http:
+    port: ":8080"
+  smtp:
+    port: ":1025"
+    hostname: "localhost"
+    username: ""
+    password: ""
+  imap:
+    port: ":1143"
+    hostname: "localhost"
 database:
-	driver: "sqlite3"
-	url: "./email.db"
+  url: "postgres://mercury:mercury@localhost:5432/mercury?sslmode=disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: 5m
 logging:
 	level: "info"
 	format: "json"

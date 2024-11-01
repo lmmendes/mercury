@@ -3,15 +3,17 @@ server:
     port: ":8080"
   smtp:
     port: ":1025"
-    domain: "localhost"
+    hostname: "localhost"
     username: ""
     password: ""
   imap:
     port: ":1143"
     hostname: "localhost"
 database:
-  driver: "sqlite3"
-  url: "./database.sqlite3"
+  url: "postgres://mercury:mercury@localhost:5432/mercury?sslmode=disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: 5m
 logging:
   level: "info"
   format: "json"

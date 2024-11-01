@@ -1,13 +1,13 @@
 package main
 
 import (
-	"database/sql"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"mercury/internal/api"
 	"mercury/internal/config"
@@ -15,8 +15,33 @@ import (
 	"mercury/internal/imap"
 	"mercury/internal/smtp"
 
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
+
+func initDB(cfg *config.Config) (*sqlx.DB, error) {
+	var db *sqlx.DB
+	var err error
+
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		db, err = sqlx.Connect("postgres", cfg.Database.URL)
+		if err == nil {
+			break
+		}
+		fmt.Printf("Failed to connect to database, retrying in 2 seconds... (%d/%d)\n", i+1, maxRetries)
+		time.Sleep(2 * time.Second)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database after %d retries: %v", maxRetries, err)
+	}
+
+	db.SetMaxOpenConns(cfg.Database.MaxOpenConns)
+	db.SetMaxIdleConns(cfg.Database.MaxIdleConns)
+	db.SetConnMaxLifetime(cfg.Database.ConnMaxLifetime)
+
+	return db, nil
+}
 
 func main() {
 	// Parse command line flags
@@ -31,9 +56,9 @@ func main() {
 	}
 
 	// Initialize database
-	db, err := sql.Open(cfg.Database.Driver, cfg.Database.URL)
+	db, err := initDB(cfg)
 	if err != nil {
-		fmt.Printf("Failed to connect to database: %v\n", err)
+		fmt.Printf("Failed to initialize database: %v\n", err)
 		os.Exit(1)
 	}
 	defer db.Close()
