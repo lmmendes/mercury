@@ -109,7 +109,7 @@ make dev
 
 # Manual start
 docker compose up -d db
-go run main.go
+go run cmd/mercury/main.go
 ```
 
 ## API Examples
@@ -190,6 +190,9 @@ QUIT
 ### Project Structure
 ```
 .
+├── cmd/
+│   └── mercury/
+│       └── main.go       # Main application entry point
 ├── config/
 │   └── default.yaml     # Default configuration
 ├── internal/
@@ -202,7 +205,6 @@ QUIT
 │   └── storage/        # Database operations
 ├── bruno/              # API testing collection
 │   └── mercury-api/    # Bruno request collections
-└── main.go             # Application entry point
 ```
 
 ### API Testing with Bruno
