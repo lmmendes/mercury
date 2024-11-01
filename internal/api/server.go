@@ -2,60 +2,78 @@ package api
 
 import (
 	"mercury/internal/core"
-	"net/http"
+	"time"
 
-	"github.com/gorilla/mux"
+	"github.com/go-playground/validator/v10"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
+type CustomValidator struct {
+	validator *validator.Validate
+}
+
+func (cv *CustomValidator) Validate(i interface{}) error {
+	return cv.validator.Struct(i)
+}
+
 type Server struct {
-	core   *core.Core
-	router *mux.Router
+	core *core.Core
+	echo *echo.Echo
 }
 
 func NewServer(core *core.Core) *Server {
+	e := echo.New()
 	s := &Server{
-		core:   core,
-		router: mux.NewRouter(),
+		core: core,
+		echo: e,
 	}
+
+	// Set custom validator
+	e.Validator = &CustomValidator{validator: validator.New()}
+
+	// Add middleware
+	e.Use(middleware.Recover())
+	e.Use(middleware.Logger())
+	e.Use(middleware.CORS())
+	e.Use(middleware.RequestID())
+	e.Use(middleware.Secure())
+	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
+		Timeout: 30 * time.Second,
+	}))
+
+	e.HTTPErrorHandler = s.errorHandler
 
 	s.routes()
 	return s
 }
 
-func (s *Server) withRecovery(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if err := recover(); err != nil {
-				s.core.Logger.Printf("panic recovered: %v", err)
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			}
-		}()
-		next(w, r)
-	}
-}
-
 func (s *Server) routes() {
-	s.router.HandleFunc("/accounts", s.withRecovery(s.createAccount)).Methods("POST")
-	s.router.HandleFunc("/accounts", s.withRecovery(s.getAccounts)).Methods("GET")
-	s.router.HandleFunc("/accounts/{id}", s.withRecovery(s.getAccount)).Methods("GET")
-	s.router.HandleFunc("/accounts/{id}", s.withRecovery(s.updateAccount)).Methods("PUT")
-	s.router.HandleFunc("/accounts/{id}", s.withRecovery(s.deleteAccount)).Methods("DELETE")
+	// Account routes
+	s.echo.POST("/accounts", s.createAccount)
+	s.echo.GET("/accounts", s.getAccounts)
+	s.echo.GET("/accounts/:id", s.getAccount)
+	s.echo.PUT("/accounts/:id", s.updateAccount)
+	s.echo.DELETE("/accounts/:id", s.deleteAccount)
 
-	s.router.HandleFunc("/accounts/{accountId}/inboxes", s.withRecovery(s.createInbox)).Methods("POST")
-	s.router.HandleFunc("/accounts/{accountId}/inboxes", s.withRecovery(s.getInboxes)).Methods("GET")
-	s.router.HandleFunc("/accounts/{accountId}/inboxes/{inboxId}", s.withRecovery(s.getInbox)).Methods("GET")
-	s.router.HandleFunc("/accounts/{accountId}/inboxes/{inboxId}", s.withRecovery(s.updateInbox)).Methods("PUT")
-	s.router.HandleFunc("/accounts/{accountId}/inboxes/{inboxId}", s.withRecovery(s.deleteInbox)).Methods("DELETE")
+	// Inbox routes
+	s.echo.POST("/accounts/:accountId/inboxes", s.createInbox)
+	s.echo.GET("/accounts/:accountId/inboxes", s.getInboxes)
+	s.echo.GET("/accounts/:accountId/inboxes/:inboxId", s.getInbox)
+	s.echo.PUT("/accounts/:accountId/inboxes/:inboxId", s.updateInbox)
+	s.echo.DELETE("/accounts/:accountId/inboxes/:inboxId", s.deleteInbox)
 
-	s.router.HandleFunc("/accounts/{accountId}/inboxes/{inboxId}/rules", s.withRecovery(s.createRule)).Methods("POST")
-	s.router.HandleFunc("/accounts/{accountId}/inboxes/{inboxId}/rules", s.withRecovery(s.getRules)).Methods("GET")
-	s.router.HandleFunc("/accounts/{accountId}/inboxes/{inboxId}/rules/{ruleId}", s.withRecovery(s.getRule)).Methods("GET")
-	s.router.HandleFunc("/accounts/{accountId}/inboxes/{inboxId}/rules/{ruleId}", s.withRecovery(s.updateRule)).Methods("PUT")
-	s.router.HandleFunc("/accounts/{accountId}/inboxes/{inboxId}/rules/{ruleId}", s.withRecovery(s.deleteRule)).Methods("DELETE")
+	// Rule routes
+	s.echo.POST("/accounts/:accountId/inboxes/:inboxId/rules", s.createRule)
+	s.echo.GET("/accounts/:accountId/inboxes/:inboxId/rules", s.getRules)
+	s.echo.GET("/accounts/:accountId/inboxes/:inboxId/rules/:ruleId", s.getRule)
+	s.echo.PUT("/accounts/:accountId/inboxes/:inboxId/rules/:ruleId", s.updateRule)
+	s.echo.DELETE("/accounts/:accountId/inboxes/:inboxId/rules/:ruleId", s.deleteRule)
 
-	s.router.HandleFunc("/accounts/{accountId}/inboxes/{inboxId}/messages", s.withRecovery(s.getMessages)).Methods("GET")
+	// Message routes
+	s.echo.GET("/accounts/:accountId/inboxes/:inboxId/messages", s.getMessages)
 }
 
 func (s *Server) ListenAndServe() error {
-	return http.ListenAndServe(s.core.Config.HTTPPort, s.router)
+	return s.echo.Start(s.core.Config.HTTPPort)
 }

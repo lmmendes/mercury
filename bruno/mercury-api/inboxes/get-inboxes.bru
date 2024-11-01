@@ -1,0 +1,21 @@
+meta {
+  name: Get Inboxes
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/accounts/1/inboxes
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+tests {
+  test("should return inboxes list", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.be.an('array');
+  });
+}

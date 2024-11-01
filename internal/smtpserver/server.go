@@ -2,10 +2,12 @@ package smtpserver
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"mercury/internal/core"
 	"mercury/internal/models"
 
+	"github.com/emersion/go-message"
 	"github.com/emersion/go-smtp"
 )
 
@@ -57,11 +59,46 @@ func (s *Session) Rcpt(to string, _ *smtp.RcptOptions) error {
 }
 
 func (s *Session) Data(r io.Reader) error {
+	// Parse the email to get the subject
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(r); err != nil {
+		return err
+	}
+
+	// Parse email headers and body
+	msg, err := message.Read(bytes.NewReader(buf.Bytes()))
+	if err != nil {
+		s.core.Logger.Error("Failed to parse email: %v", err)
+		return err
+	}
+
+	header := msg.Header
+	body := new(bytes.Buffer)
+	if _, err := io.Copy(body, msg.Body); err != nil {
+		s.core.Logger.Error("Failed to read message body: %v", err)
+		return err
+	}
+
 	message := &models.Message{
-		Body:     readAll(r),
+		Body:     body.String(),
 		Sender:   s.from,
 		Receiver: s.to,
+		Subject:  header.Get("Subject"),
+		InboxID:  0, // We need to look up the inbox ID based on the recipient email
 	}
+
+	// Look up the inbox ID based on the recipient email
+	inbox, err := s.core.Repository.GetInboxByEmail(s.to)
+	if err != nil {
+		s.core.Logger.Error("Failed to find inbox for email %s: %v", s.to, err)
+		return err
+	}
+	if inbox == nil {
+		s.core.Logger.Error("No inbox found for email %s", s.to)
+		return fmt.Errorf("no inbox found for recipient")
+	}
+
+	message.InboxID = inbox.ID
 
 	s.core.Logger.Info("Received email from %s to %s", s.from, s.to)
 
@@ -82,10 +119,4 @@ func (s *Session) Logout() error {
 
 func (s *Session) AuthPlain(username, password string) error {
 	return nil // TODO: For now, accept all auth
-}
-
-func readAll(r io.Reader) string {
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(r)
-	return buf.String()
 }
