@@ -77,9 +77,12 @@ server:
     port: ":8080"
   smtp:
     port: ":1025"
-    domain: "localhost"
+    hostname: "localhost"
     username: ""
     password: ""
+  imap:
+    port: ":1143"
+    hostname: "localhost"
 database:
   url: "postgres://mercury:mercury@localhost:5432/mercury?sslmode=disable"
   max_open_conns: 25
@@ -201,7 +204,8 @@ QUIT
 │   ├── core/           # Core business logic
 │   ├── logger/         # Logging package
 │   ├── models/         # Data models
-│   ├── smtpserver/     # SMTP server implementation
+│   ├── smtp/           # SMTP server implementation
+│   ├── imap/           # IMAP server implementation
 │   └── storage/        # Database operations
 ├── bruno/              # API testing collection
 │   └── mercury-api/    # Bruno request collections
