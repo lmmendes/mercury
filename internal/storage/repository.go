@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"mercury/internal/models"
 
 	"github.com/jmoiron/sqlx"
@@ -488,7 +489,10 @@ func (r *repository) InitializeTables() error {
 
 	for _, query := range queries {
 		if _, err := tx.Exec(query); err != nil {
-			tx.Rollback()
+			rbErr := tx.Rollback()
+			if rbErr != nil {
+				return fmt.Errorf("failed to execute query: %w, failed to rollback transaction: %v", err, rbErr)
+			}
 			return err
 		}
 	}
