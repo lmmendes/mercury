@@ -7,12 +7,12 @@ A simple email server that allows you to create inboxes and rules to filter emai
 - [Mercury](#mercury)
   - [Table of Contents](#table-of-contents)
   - [Features](#features)
+  - [Prerequisites](#prerequisites)
+  - [Development Setup](#development-setup)
   - [Configuration](#configuration)
     - [Using Config File](#using-config-file)
     - [Using Environment Variables](#using-environment-variables)
   - [Running the Server](#running-the-server)
-    - [Standard Run](#standard-run)
-    - [With Custom Config](#with-custom-config)
   - [API Examples](#api-examples)
     - [Account Management](#account-management)
     - [Inbox Management](#inbox-management)
@@ -20,7 +20,7 @@ A simple email server that allows you to create inboxes and rules to filter emai
   - [Testing Email Reception](#testing-email-reception)
   - [Development](#development)
     - [Project Structure](#project-structure)
-    - [Adding New Features](#adding-new-features)
+    - [API Testing with Bruno](#api-testing-with-bruno)
   - [Architecture](#architecture)
 
 ## Features
@@ -29,8 +29,38 @@ A simple email server that allows you to create inboxes and rules to filter emai
 - SMTP server for receiving emails
 - Rule-based email filtering
 - Configurable via YAML and environment variables
-- Structured logging with multiple levels
-- SQLite database storage
+
+## Prerequisites
+
+- Go 1.22 or later
+- Docker and Docker Compose
+- Make (optional, but recommended)
+
+## Development Setup
+
+1. Clone the repository
+2. Start the PostgreSQL database and run the application:
+```bash
+make dev
+```
+
+Additional commands:
+```bash
+# Start the database
+make db-up
+
+# Stop the database
+make db-down
+
+# Clean database (remove volume)
+make db-clean
+
+# Reset database (down, clean, up)
+make db-reset
+
+# Run tests
+make test
+```
 
 ## Configuration
 
@@ -47,12 +77,17 @@ server:
     port: ":8080"
   smtp:
     port: ":1025"
-    domain: "localhost"
+    hostname: "localhost"
     username: ""
     password: ""
+  imap:
+    port: ":1143"
+    hostname: "localhost"
 database:
-  driver: "sqlite3"
-  url: "./email.db"
+  url: "postgres://mercury:mercury@localhost:5432/mercury?sslmode=disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: 5m
 logging:
   level: "info"  # Available: debug, info, warn, error, fatal
   format: "json"
@@ -65,21 +100,19 @@ Environment variables override config file settings:
 ```shell
 MERCURY_SERVER_HTTP_PORT=":9090"
 MERCURY_SERVER_SMTP_PORT=":2025"
+MERCURY_DATABASE_URL="postgres://user:pass@host:5432/dbname"
 MERCURY_LOGGING_LEVEL="debug"
 ```
 
 ## Running the Server
 
-### Standard Run
-
 ```shell
-go run main.go
-```
+# Using make (recommended)
+make dev
 
-### With Custom Config
-
-```shell
-go run main.go -config=/path/to/config.yaml
+# Manual start
+docker compose up -d db
+go run cmd/mercury/main.go
 ```
 
 ## API Examples
@@ -93,9 +126,9 @@ curl -X POST http://localhost:8080/accounts \
   -d '{"name": "Test Account"}'
 ```
 
-List Accounts:
+List Accounts (with pagination):
 ```shell
-curl http://localhost:8080/accounts
+curl "http://localhost:8080/accounts?limit=10&offset=0"
 ```
 
 ### Inbox Management
@@ -107,9 +140,9 @@ curl -X POST http://localhost:8080/accounts/1/inboxes \
   -d '{"email": "inbox@example.com"}'
 ```
 
-List Inboxes for Account:
+List Inboxes for Account (with pagination):
 ```shell
-curl http://localhost:8080/accounts/1/inboxes
+curl "http://localhost:8080/accounts/1/inboxes?limit=10&offset=0"
 ```
 
 ### Rule Management
@@ -160,6 +193,9 @@ QUIT
 ### Project Structure
 ```
 .
+├── cmd/
+│   └── mercury/
+│       └── main.go       # Main application entry point
 ├── config/
 │   └── default.yaml     # Default configuration
 ├── internal/
@@ -168,17 +204,22 @@ QUIT
 │   ├── core/           # Core business logic
 │   ├── logger/         # Logging package
 │   ├── models/         # Data models
-│   ├── smtpserver/     # SMTP server implementation
+│   ├── smtp/           # SMTP server implementation
+│   ├── imap/           # IMAP server implementation
 │   └── storage/        # Database operations
-└── main.go             # Application entry point
+├── bruno/              # API testing collection
+│   └── mercury-api/    # Bruno request collections
 ```
 
-### Adding New Features
+### API Testing with Bruno
 
-1. Define models in `internal/models`
-2. Implement storage operations in `internal/storage`
-3. Add business logic in `internal/core`
-4. Create API endpoints in `internal/api`
+The project includes a comprehensive API test suite using [Bruno](https://www.usebruno.com/). Bruno is a fast and git-friendly API client that allows testing and validating API endpoints.
+
+To use the Bruno collection:
+1. Install Bruno from [usebruno.com](https://www.usebruno.com/)
+2. Open the `bruno` folder in Bruno
+3. Run requests individually or use collections
+4. Tests will automatically validate responses
 
 ## Architecture
 

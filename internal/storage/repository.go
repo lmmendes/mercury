@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"mercury/internal/models"
+
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 type Repository interface {
@@ -12,57 +15,61 @@ type Repository interface {
 	GetAccount(id int) (*models.Account, error)
 	UpdateAccount(account *models.Account) error
 	DeleteAccount(id int) error
-	ListAccounts() ([]*models.Account, error)
+	ListAccounts(limit, offset int) ([]*models.Account, int, error)
 
 	// Inbox operations
 	CreateInbox(inbox *models.Inbox) error
 	GetInbox(id int) (*models.Inbox, error)
 	UpdateInbox(inbox *models.Inbox) error
 	DeleteInbox(id int) error
-	ListInboxesByAccount(accountID int) ([]*models.Inbox, error)
+	ListInboxesByAccount(accountID, limit, offset int) ([]*models.Inbox, int, error)
 
 	// Rule operations
 	CreateRule(rule *models.Rule) error
 	GetRule(id int) (*models.Rule, error)
 	UpdateRule(rule *models.Rule) error
 	DeleteRule(id int) error
-	ListRulesByInbox(inboxID int) ([]*models.Rule, error)
+	ListRulesByInbox(inboxID, limit, offset int) ([]*models.Rule, int, error)
 
 	// Message operations
 	CreateMessage(message *models.Message) error
 	GetMessage(id int) (*models.Message, error)
-	ListMessagesByInbox(inboxID int) ([]*models.Message, error)
-	ListRules() ([]*models.Rule, error)
+	ListMessagesByInbox(inboxID, limit, offset int) ([]*models.Message, int, error)
+	ListRules(limit, offset int) ([]*models.Rule, int, error)
 	GetInboxByEmail(email string) (*models.Inbox, error)
+
+	// User operations
+	CreateUser(user *models.User) error
+	GetUser(id int) (*models.User, error)
+	UpdateUser(user *models.User) error
+	DeleteUser(id int) error
+	GetUserByUsername(username string) (*models.User, error)
 
 	// Initialize tables
 	InitializeTables() error
 }
 
 type repository struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
-func NewRepository(db *sql.DB) Repository {
+func NewRepository(db *sqlx.DB) Repository {
 	return &repository{db: db}
 }
 
 func (r *repository) CreateAccount(account *models.Account) error {
-	result, err := r.db.Exec("INSERT INTO accounts (name) VALUES (?)", account.Name)
-	if err != nil {
-		return err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return err
-	}
-	account.ID = int(id)
-	return nil
+	query := `
+		INSERT INTO accounts (name, created_at, updated_at)
+		VALUES ($1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+		RETURNING id, created_at, updated_at`
+	return r.db.QueryRow(query, account.Name).Scan(&account.ID, &account.CreatedAt, &account.UpdatedAt)
 }
 
 func (r *repository) GetAccount(id int) (*models.Account, error) {
 	var account models.Account
-	err := r.db.QueryRow("SELECT id, name FROM accounts WHERE id = ?", id).Scan(&account.ID, &account.Name)
+	err := r.db.Get(&account,
+		"SELECT id, name, created_at, updated_at FROM accounts WHERE id = $1",
+		id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -73,22 +80,23 @@ func (r *repository) GetAccount(id int) (*models.Account, error) {
 }
 
 func (r *repository) UpdateAccount(account *models.Account) error {
-	result, err := r.db.Exec("UPDATE accounts SET name = ? WHERE id = ?", account.Name, account.ID)
-	if err != nil {
+	query := `
+		UPDATE accounts
+		SET name = $1, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $2
+		RETURNING updated_at`
+	result := r.db.QueryRow(query, account.Name, account.ID)
+	if err := result.Scan(&account.UpdatedAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errors.New("account not found")
+		}
 		return err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return errors.New("account not found")
 	}
 	return nil
 }
 
 func (r *repository) DeleteAccount(id int) error {
-	result, err := r.db.Exec("DELETE FROM accounts WHERE id = ?", id)
+	result, err := r.db.Exec("DELETE FROM accounts WHERE id = $1", id)
 	if err != nil {
 		return err
 	}
@@ -102,45 +110,36 @@ func (r *repository) DeleteAccount(id int) error {
 	return nil
 }
 
-func (r *repository) ListAccounts() ([]*models.Account, error) {
-	rows, err := r.db.Query("SELECT id, name FROM accounts")
+func (r *repository) ListAccounts(limit, offset int) ([]*models.Account, int, error) {
+	var total int
+	err := r.db.Get(&total, "SELECT COUNT(*) FROM accounts")
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	defer rows.Close()
 
 	var accounts []*models.Account
-	for rows.Next() {
-		account := &models.Account{}
-		if err := rows.Scan(&account.ID, &account.Name); err != nil {
-			return nil, err
-		}
-		accounts = append(accounts, account)
+	err = r.db.Select(&accounts,
+		"SELECT id, name, created_at, updated_at FROM accounts ORDER BY id LIMIT $1 OFFSET $2",
+		limit, offset)
+	if err != nil {
+		return nil, 0, err
 	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return accounts, nil
+
+	return accounts, total, nil
 }
 
 func (r *repository) CreateInbox(inbox *models.Inbox) error {
-	result, err := r.db.Exec("INSERT INTO inboxes (account_id, email) VALUES (?, ?)",
-		inbox.AccountID, inbox.Email)
-	if err != nil {
-		return err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return err
-	}
-	inbox.ID = int(id)
-	return nil
+	query := `
+		INSERT INTO inboxes (account_id, email, created_at, updated_at)
+		VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+		RETURNING id, created_at, updated_at`
+	return r.db.QueryRow(query, inbox.AccountID, inbox.Email).Scan(
+		&inbox.ID, &inbox.CreatedAt, &inbox.UpdatedAt)
 }
 
 func (r *repository) GetInbox(id int) (*models.Inbox, error) {
 	var inbox models.Inbox
-	err := r.db.QueryRow("SELECT id, account_id, email FROM inboxes WHERE id = ?", id).
-		Scan(&inbox.ID, &inbox.AccountID, &inbox.Email)
+	err := r.db.Get(&inbox, "SELECT id, account_id, email, created_at, updated_at FROM inboxes WHERE id = $1", id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -151,8 +150,7 @@ func (r *repository) GetInbox(id int) (*models.Inbox, error) {
 }
 
 func (r *repository) UpdateInbox(inbox *models.Inbox) error {
-	result, err := r.db.Exec("UPDATE inboxes SET email = ? WHERE id = ?",
-		inbox.Email, inbox.ID)
+	result, err := r.db.Exec("UPDATE inboxes SET email = $1 WHERE id = $2", inbox.Email, inbox.ID)
 	if err != nil {
 		return err
 	}
@@ -167,7 +165,7 @@ func (r *repository) UpdateInbox(inbox *models.Inbox) error {
 }
 
 func (r *repository) DeleteInbox(id int) error {
-	result, err := r.db.Exec("DELETE FROM inboxes WHERE id = ?", id)
+	result, err := r.db.Exec("DELETE FROM inboxes WHERE id = $1", id)
 	if err != nil {
 		return err
 	}
@@ -181,42 +179,36 @@ func (r *repository) DeleteInbox(id int) error {
 	return nil
 }
 
-func (r *repository) ListInboxesByAccount(accountID int) ([]*models.Inbox, error) {
-	rows, err := r.db.Query("SELECT id, account_id, email FROM inboxes WHERE account_id = ?", accountID)
+func (r *repository) ListInboxesByAccount(accountID, limit, offset int) ([]*models.Inbox, int, error) {
+	var total int
+	err := r.db.Get(&total, "SELECT COUNT(*) FROM inboxes WHERE account_id = $1", accountID)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	defer rows.Close()
 
 	var inboxes []*models.Inbox
-	for rows.Next() {
-		inbox := &models.Inbox{}
-		if err := rows.Scan(&inbox.ID, &inbox.AccountID, &inbox.Email); err != nil {
-			return nil, err
-		}
-		inboxes = append(inboxes, inbox)
+	err = r.db.Select(&inboxes,
+		"SELECT id, account_id, email, created_at, updated_at FROM inboxes WHERE account_id = $1 ORDER BY id LIMIT $2 OFFSET $3",
+		accountID, limit, offset)
+	if err != nil {
+		return nil, 0, err
 	}
-	return inboxes, rows.Err()
+
+	return inboxes, total, nil
 }
 
 func (r *repository) CreateRule(rule *models.Rule) error {
-	result, err := r.db.Exec("INSERT INTO rules (inbox_id, sender, receiver, subject) VALUES (?, ?, ?, ?)",
-		rule.InboxID, rule.Sender, rule.Receiver, rule.Subject)
-	if err != nil {
-		return err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return err
-	}
-	rule.ID = int(id)
-	return nil
+	query := `
+		INSERT INTO rules (inbox_id, sender, receiver, subject, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+		RETURNING id, created_at, updated_at`
+	return r.db.QueryRow(query, rule.InboxID, rule.Sender, rule.Receiver, rule.Subject).Scan(
+		&rule.ID, &rule.CreatedAt, &rule.UpdatedAt)
 }
 
 func (r *repository) GetRule(id int) (*models.Rule, error) {
 	var rule models.Rule
-	err := r.db.QueryRow("SELECT id, inbox_id, sender, receiver, subject FROM rules WHERE id = ?", id).
-		Scan(&rule.ID, &rule.InboxID, &rule.Sender, &rule.Receiver, &rule.Subject)
+	err := r.db.Get(&rule, "SELECT id, inbox_id, sender, receiver, subject, created_at, updated_at FROM rules WHERE id = $1", id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -227,7 +219,7 @@ func (r *repository) GetRule(id int) (*models.Rule, error) {
 }
 
 func (r *repository) UpdateRule(rule *models.Rule) error {
-	result, err := r.db.Exec("UPDATE rules SET sender = ?, receiver = ?, subject = ? WHERE id = ?",
+	result, err := r.db.Exec("UPDATE rules SET sender = $1, receiver = $2, subject = $3 WHERE id = $4",
 		rule.Sender, rule.Receiver, rule.Subject, rule.ID)
 	if err != nil {
 		return err
@@ -243,7 +235,7 @@ func (r *repository) UpdateRule(rule *models.Rule) error {
 }
 
 func (r *repository) DeleteRule(id int) error {
-	result, err := r.db.Exec("DELETE FROM rules WHERE id = ?", id)
+	result, err := r.db.Exec("DELETE FROM rules WHERE id = $1", id)
 	if err != nil {
 		return err
 	}
@@ -257,42 +249,37 @@ func (r *repository) DeleteRule(id int) error {
 	return nil
 }
 
-func (r *repository) ListRulesByInbox(inboxID int) ([]*models.Rule, error) {
-	rows, err := r.db.Query("SELECT id, inbox_id, sender, receiver, subject FROM rules WHERE inbox_id = ?", inboxID)
+func (r *repository) ListRulesByInbox(inboxID, limit, offset int) ([]*models.Rule, int, error) {
+	var total int
+	err := r.db.Get(&total, "SELECT COUNT(*) FROM rules WHERE inbox_id = $1", inboxID)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	defer rows.Close()
 
 	var rules []*models.Rule
-	for rows.Next() {
-		rule := &models.Rule{}
-		if err := rows.Scan(&rule.ID, &rule.InboxID, &rule.Sender, &rule.Receiver, &rule.Subject); err != nil {
-			return nil, err
-		}
-		rules = append(rules, rule)
+	err = r.db.Select(&rules,
+		"SELECT id, inbox_id, sender, receiver, subject, created_at, updated_at FROM rules WHERE inbox_id = $1 ORDER BY id LIMIT $2 OFFSET $3",
+		inboxID, limit, offset)
+	if err != nil {
+		return nil, 0, err
 	}
-	return rules, rows.Err()
+
+	return rules, total, nil
 }
 
 func (r *repository) CreateMessage(message *models.Message) error {
-	result, err := r.db.Exec("INSERT INTO messages (inbox_id, sender, receiver, subject, body) VALUES (?, ?, ?, ?, ?)",
-		message.InboxID, message.Sender, message.Receiver, message.Subject, message.Body)
-	if err != nil {
-		return err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return err
-	}
-	message.ID = int(id)
-	return nil
+	query := `
+		INSERT INTO messages (inbox_id, sender, receiver, subject, body, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+		RETURNING id, created_at, updated_at`
+	return r.db.QueryRow(query,
+		message.InboxID, message.Sender, message.Receiver, message.Subject, message.Body).Scan(
+		&message.ID, &message.CreatedAt, &message.UpdatedAt)
 }
 
 func (r *repository) GetMessage(id int) (*models.Message, error) {
 	var message models.Message
-	err := r.db.QueryRow("SELECT id, inbox_id, sender, receiver, subject, body FROM messages WHERE id = ?", id).
-		Scan(&message.ID, &message.InboxID, &message.Sender, &message.Receiver, &message.Subject, &message.Body)
+	err := r.db.Get(&message, "SELECT id, inbox_id, sender, receiver, subject, body, created_at, updated_at FROM messages WHERE id = $1", id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -302,46 +289,45 @@ func (r *repository) GetMessage(id int) (*models.Message, error) {
 	return &message, nil
 }
 
-func (r *repository) ListMessagesByInbox(inboxID int) ([]*models.Message, error) {
-	rows, err := r.db.Query("SELECT id, inbox_id, sender, receiver, subject, body FROM messages WHERE inbox_id = ?", inboxID)
+func (r *repository) ListMessagesByInbox(inboxID, limit, offset int) ([]*models.Message, int, error) {
+	var total int
+	err := r.db.Get(&total, "SELECT COUNT(*) FROM messages WHERE inbox_id = $1", inboxID)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	defer rows.Close()
 
 	var messages []*models.Message
-	for rows.Next() {
-		message := &models.Message{}
-		if err := rows.Scan(&message.ID, &message.InboxID, &message.Sender, &message.Receiver, &message.Subject, &message.Body); err != nil {
-			return nil, err
-		}
-		messages = append(messages, message)
+	err = r.db.Select(&messages,
+		"SELECT id, inbox_id, sender, receiver, subject, body, created_at, updated_at FROM messages WHERE inbox_id = $1 ORDER BY id LIMIT $2 OFFSET $3",
+		inboxID, limit, offset)
+	if err != nil {
+		return nil, 0, err
 	}
-	return messages, rows.Err()
+
+	return messages, total, nil
 }
 
-func (r *repository) ListRules() ([]*models.Rule, error) {
-	rows, err := r.db.Query("SELECT id, inbox_id, sender, receiver, subject FROM rules")
+func (r *repository) ListRules(limit, offset int) ([]*models.Rule, int, error) {
+	var total int
+	err := r.db.Get(&total, "SELECT COUNT(*) FROM rules")
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	defer rows.Close()
 
 	var rules []*models.Rule
-	for rows.Next() {
-		rule := &models.Rule{}
-		if err := rows.Scan(&rule.ID, &rule.InboxID, &rule.Sender, &rule.Receiver, &rule.Subject); err != nil {
-			return nil, err
-		}
-		rules = append(rules, rule)
+	err = r.db.Select(&rules,
+		"SELECT id, inbox_id, sender, receiver, subject, created_at, updated_at FROM rules ORDER BY id LIMIT $1 OFFSET $2",
+		limit, offset)
+	if err != nil {
+		return nil, 0, err
 	}
-	return rules, rows.Err()
+
+	return rules, total, nil
 }
 
 func (r *repository) GetInboxByEmail(email string) (*models.Inbox, error) {
 	var inbox models.Inbox
-	err := r.db.QueryRow("SELECT id, account_id, email FROM inboxes WHERE email = ?", email).
-		Scan(&inbox.ID, &inbox.AccountID, &inbox.Email)
+	err := r.db.Get(&inbox, "SELECT id, account_id, email, created_at, updated_at FROM inboxes WHERE email = $1", email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -351,63 +337,161 @@ func (r *repository) GetInboxByEmail(email string) (*models.Inbox, error) {
 	return &inbox, nil
 }
 
+func (r *repository) CreateUser(user *models.User) error {
+	query := `
+		INSERT INTO users (
+			name, username, password, email, status, kind,
+			password_login, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+		RETURNING id, created_at, updated_at`
+
+	return r.db.QueryRow(
+		query,
+		user.Name,
+		user.Username,
+		user.Password,
+		user.Email,
+		user.Status,
+		user.Kind,
+		user.PasswordLogin,
+	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
+}
+
+func (r *repository) GetUser(id int) (*models.User, error) {
+	var user models.User
+	err := r.db.Get(&user, `
+		SELECT id, name, username, password, email, status, kind,
+			   password_login, loggedin_at, created_at, updated_at
+		FROM users WHERE id = $1`, id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *repository) UpdateUser(user *models.User) error {
+	query := `
+		UPDATE users
+		SET name = $1, username = $2, password = $3, email = $4,
+			status = $5, kind = $6, password_login = $7,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE id = $8
+		RETURNING updated_at`
+
+	result := r.db.QueryRow(
+		query,
+		user.Name,
+		user.Username,
+		user.Password,
+		user.Email,
+		user.Status,
+		user.Kind,
+		user.PasswordLogin,
+		user.ID,
+	)
+
+	if err := result.Scan(&user.UpdatedAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errors.New("user not found")
+		}
+		return err
+	}
+	return nil
+}
+
+func (r *repository) GetUserByUsername(username string) (*models.User, error) {
+	var user models.User
+	err := r.db.Get(&user, `
+		SELECT id, name, username, password, email, status, kind,
+			   password_login, loggedin_at, created_at, updated_at
+		FROM users WHERE username = $1`, username)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *repository) DeleteUser(id int) error {
+	result, err := r.db.Exec("DELETE FROM users WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return errors.New("user not found")
+	}
+	return nil
+}
+
 func (r *repository) InitializeTables() error {
 	queries := []string{
 		`CREATE TABLE IF NOT EXISTS accounts (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			id SERIAL PRIMARY KEY,
 			name TEXT,
-			created_at       DEFAULT CURRENT_TIMESTAMP,
-			updated_at       DEFAULT CURRENT_TIMESTAMP
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE TABLE IF NOT EXISTS inboxes (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			account_id INTEGER,
-			email TEXT UNIQUE,
-			created_at       DEFAULT CURRENT_TIMESTAMP,
-			updated_at       DEFAULT CURRENT_TIMESTAMP,
-			FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+			id SERIAL PRIMARY KEY,
+			account_id INTEGER REFERENCES accounts(id) ON DELETE CASCADE,
+			email TEXT,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE TABLE IF NOT EXISTS rules (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			inbox_id INTEGER,
+			id SERIAL PRIMARY KEY,
+			inbox_id INTEGER REFERENCES inboxes(id) ON DELETE CASCADE,
 			sender TEXT,
 			receiver TEXT,
 			subject TEXT,
-			created_at       DEFAULT CURRENT_TIMESTAMP,
-			updated_at       DEFAULT CURRENT_TIMESTAMP,
-			FOREIGN KEY (inbox_id) REFERENCES inboxes(id) ON DELETE CASCADE
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE TABLE IF NOT EXISTS messages (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			inbox_id INTEGER,
+			id SERIAL PRIMARY KEY,
+			inbox_id INTEGER REFERENCES inboxes(id) ON DELETE CASCADE,
 			sender TEXT,
 			receiver TEXT,
 			subject TEXT,
 			body TEXT,
-			created_at       DEFAULT CURRENT_TIMESTAMP,
-			updated_at       DEFAULT CURRENT_TIMESTAMP,
-			FOREIGN KEY (inbox_id) REFERENCES inboxes(id) ON DELETE CASCADE
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE TABLE IF NOT EXISTS users (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			username TEXT NOT NULL UNIQUE,
-			password TEXT NULL,
-			email TEXT NOT NULL UNIQUE,
-			name TEXT NOT NULL,
-			status TEXT CHECK( status IN ('enabled', 'disabled') ),
-			kind TEXT CHECK( kind IN ('user', 'api') ),
-			password_login BOOLEAN NOT NULL DEFAULT false,
-			loggedin_at      TIMESTAMP NULL,
-			created_at       DEFAULT CURRENT_TIMESTAMP,
-			updated_at       DEFAULT CURRENT_TIMESTAMP
+			id SERIAL PRIMARY KEY,
+			name TEXT,
+			username TEXT UNIQUE,
+			password TEXT,
+			email TEXT,
+			status TEXT,
+			kind TEXT,
+			password_login BOOLEAN DEFAULT false,
+			loggedin_at TIMESTAMP WITH TIME ZONE,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
 	}
 
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return err
+	}
+
 	for _, query := range queries {
-		if _, err := r.db.Exec(query); err != nil {
+		if _, err := tx.Exec(query); err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
 
-	return nil
+	return tx.Commit()
 }

@@ -1,11 +1,13 @@
 package core
 
 import (
-	"database/sql"
 	"mercury/internal/logger"
 	"mercury/internal/models"
 	"mercury/internal/storage"
 	"os"
+
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
 type Config struct {
@@ -27,7 +29,7 @@ type Core struct {
 	MessageService MessageService
 }
 
-func NewCore(config *Config, db *sql.DB) *Core {
+func NewCore(config *Config, db *sqlx.DB) *Core {
 	logger := logger.New(os.Stdout, config.LogLevel)
 
 	core := &Core{
