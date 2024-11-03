@@ -369,7 +369,14 @@ func initializeTables(db *sqlx.DB) error {
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+
+	// Ensure proper rollback handling
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			// We can only log this error since we can't return it
+			fmt.Printf("failed to rollback transaction: %v\n", err)
+		}
+	}()
 
 	// Execute the schema
 	if _, err := tx.Exec(string(schemaBytes)); err != nil {
