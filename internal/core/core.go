@@ -25,7 +25,7 @@ type Core struct {
 }
 
 func NewCore(cfg *config.Config, db *sqlx.DB) (*Core, error) {
-	logger := logger.New(os.Stdout, cfg.Logging.Level)
+	baseLogger := logger.New(os.Stdout, cfg.Logging.Level)
 
 	repo, err := storage.NewRepository(db)
 	if err != nil {
@@ -34,7 +34,7 @@ func NewCore(cfg *config.Config, db *sqlx.DB) (*Core, error) {
 
 	core := &Core{
 		Config:     cfg,
-		Logger:     logger,
+		Logger:     baseLogger,
 		Repository: repo,
 	}
 

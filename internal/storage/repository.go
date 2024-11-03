@@ -48,9 +48,6 @@ type Repository interface {
 	UpdateUser(ctx context.Context, user *models.User) error
 	DeleteUser(ctx context.Context, id int) error
 	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
-
-	// Initialize tables
-	InitializeTables(ctx context.Context) error
 }
 
 type repository struct {
@@ -59,6 +56,12 @@ type repository struct {
 }
 
 func NewRepository(db *sqlx.DB) (Repository, error) {
+	// First initialize tables
+	if err := initializeTables(db); err != nil {
+		return nil, fmt.Errorf("failed to initialize tables: %w", err)
+	}
+
+	// Then prepare queries
 	queries, err := PrepareQueries(db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare queries: %w", err)
@@ -355,28 +358,28 @@ func (r *repository) DeleteUser(ctx context.Context, id int) error {
 	return nil
 }
 
-func (r *repository) InitializeTables(ctx context.Context) error {
-	// Read the initialization query directly from the database connection
-	// since it's a one-time operation and doesn't need to be prepared
+// Add a new private function to handle table initialization
+func initializeTables(db *sqlx.DB) error {
+	// Read the initialization query
 	queryBytes, err := queriesFS.ReadFile("queries.sql")
 	if err != nil {
 		return fmt.Errorf("failed to read queries file: %w", err)
 	}
 
-	// Get the initialization query
+	// Parse queries
 	queries, err := goyesql.ParseBytes(queryBytes)
 	if err != nil {
 		return fmt.Errorf("failed to parse queries: %w", err)
 	}
 
 	// Start a transaction
-	tx, err := r.db.Beginx()
+	tx, err := db.Beginx()
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
 	// Execute the initialization query
-	if _, err := tx.ExecContext(ctx, queries["initialize-tables"].Query); err != nil {
+	if _, err := tx.Exec(queries["initialize-tables"].Query); err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
 			return fmt.Errorf("failed to execute initialization query: %w, failed to rollback: %v", err, rbErr)
 		}

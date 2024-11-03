@@ -126,3 +126,7 @@ func (s *SmtpSession) Logout() error {
 func (s *SmtpSession) AuthPlain(username, password string) error {
 	return nil // TODO: For now, accept all auth
 }
+
+func (s *SmtpServer) Shutdown(ctx context.Context) error {
+	return s.smtp.Close()
+}

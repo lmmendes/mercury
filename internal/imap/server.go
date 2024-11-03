@@ -1,6 +1,7 @@
 package imap
 
 import (
+	"context"
 	"errors"
 	"mercury/internal/core"
 	"time"
@@ -154,6 +155,11 @@ type ImapServer struct {
 
 func (s *ImapServer) ListenAndServe() error {
 	return s.imap.ListenAndServe()
+}
+
+// Add Shutdown method to ImapServer struct
+func (s *ImapServer) Shutdown(ctx context.Context) error {
+	return s.imap.Close()
 }
 
 func NewServer(core *core.Core) *ImapServer {

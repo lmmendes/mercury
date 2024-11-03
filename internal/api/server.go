@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"mercury/internal/core"
 	"time"
 
@@ -98,4 +99,9 @@ func (s *Server) routes() {
 
 func (s *Server) ListenAndServe() error {
 	return s.echo.Start(s.core.Config.Server.HTTP.Port)
+}
+
+// Add Shutdown method to Server struct
+func (s *Server) Shutdown(ctx context.Context) error {
+	return s.echo.Shutdown(ctx)
 }

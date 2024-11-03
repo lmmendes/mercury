@@ -2,72 +2,76 @@ package core
 
 import (
 	"context"
-	"mercury/internal/logger"
 	"mercury/internal/models"
-	"mercury/internal/storage"
 )
 
-type AccountService interface {
-	Create(ctx context.Context, account *models.Account) error
-	Get(ctx context.Context, id int) (*models.Account, error)
-	Update(ctx context.Context, account *models.Account) error
-	Delete(ctx context.Context, id int) error
-	List(ctx context.Context, limit, offset int) (*models.PaginatedResponse, error)
-}
-
-type accountService struct {
-	repo   storage.Repository
-	logger *logger.Logger
+type AccountService struct {
+	core *Core
 }
 
 func NewAccountService(core *Core) AccountService {
-	return &accountService{
-		repo:   core.Repository,
-		logger: core.Logger,
-	}
+	return AccountService{core: core}
 }
 
-func (s *accountService) Create(ctx context.Context, account *models.Account) error {
-	if err := s.repo.CreateAccount(ctx, account); err != nil {
-		s.logger.Error("Failed to create account: %v", err)
+func (s *AccountService) Create(ctx context.Context, account *models.Account) error {
+	s.core.Logger.Info("Creating new account: %s", account.Name)
+
+	if err := s.core.Repository.CreateAccount(ctx, account); err != nil {
+		s.core.Logger.Error("Failed to create account: %v", err)
 		return err
 	}
-	s.logger.Info("Created account: %d", account.ID)
+
+	s.core.Logger.Info("Successfully created account with ID: %d", account.ID)
 	return nil
 }
 
-func (s *accountService) Get(ctx context.Context, id int) (*models.Account, error) {
-	account, err := s.repo.GetAccount(ctx, id)
+func (s *AccountService) Get(ctx context.Context, id int) (*models.Account, error) {
+	s.core.Logger.Debug("Fetching account with ID: %d", id)
+
+	account, err := s.core.Repository.GetAccount(ctx, id)
 	if err != nil {
-		s.logger.Error("Failed to get account %d: %v", id, err)
+		s.core.Logger.Error("Failed to fetch account: %v", err)
 		return nil, err
 	}
-	s.logger.Debug("Retrieved account: %d", id)
+
+	if account == nil {
+		s.core.Logger.Info("Account not found with ID: %d", id)
+		return nil, ErrNotFound
+	}
+
 	return account, nil
 }
 
-func (s *accountService) Update(ctx context.Context, account *models.Account) error {
-	if err := s.repo.UpdateAccount(ctx, account); err != nil {
-		s.logger.Error("Failed to update account %d: %v", account.ID, err)
+func (s *AccountService) Update(ctx context.Context, account *models.Account) error {
+	s.core.Logger.Info("Updating account with ID: %d", account.ID)
+
+	if err := s.core.Repository.UpdateAccount(ctx, account); err != nil {
+		s.core.Logger.Error("Failed to update account: %v", err)
 		return err
 	}
-	s.logger.Info("Updated account: %d", account.ID)
+
+	s.core.Logger.Info("Successfully updated account with ID: %d", account.ID)
 	return nil
 }
 
-func (s *accountService) Delete(ctx context.Context, id int) error {
-	if err := s.repo.DeleteAccount(ctx, id); err != nil {
-		s.logger.Error("Failed to delete account %d: %v", id, err)
+func (s *AccountService) Delete(ctx context.Context, id int) error {
+	s.core.Logger.Info("Deleting account with ID: %d", id)
+
+	if err := s.core.Repository.DeleteAccount(ctx, id); err != nil {
+		s.core.Logger.Error("Failed to delete account: %v", err)
 		return err
 	}
-	s.logger.Info("Deleted account: %d", id)
+
+	s.core.Logger.Info("Successfully deleted account with ID: %d", id)
 	return nil
 }
 
-func (s *accountService) List(ctx context.Context, limit, offset int) (*models.PaginatedResponse, error) {
-	accounts, total, err := s.repo.ListAccounts(ctx, limit, offset)
+func (s *AccountService) List(ctx context.Context, limit, offset int) (*models.PaginatedResponse, error) {
+	s.core.Logger.Info("Listing accounts with limit: %d and offset: %d", limit, offset)
+
+	accounts, total, err := s.core.Repository.ListAccounts(ctx, limit, offset)
 	if err != nil {
-		s.logger.Error("Failed to list accounts: %v", err)
+		s.core.Logger.Error("Failed to list accounts: %v", err)
 		return nil, err
 	}
 
@@ -78,6 +82,6 @@ func (s *accountService) List(ctx context.Context, limit, offset int) (*models.P
 	response.Pagination.Limit = limit
 	response.Pagination.Offset = offset
 
-	s.logger.Debug("Retrieved %d accounts (total: %d)", len(accounts), total)
+	s.core.Logger.Info("Successfully retrieved %d accounts (total: %d)", len(accounts), total)
 	return response, nil
 }
