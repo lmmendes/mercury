@@ -9,7 +9,7 @@ import (
 	goyesqlx "github.com/knadh/goyesql/v2/sqlx"
 )
 
-//go:embed queries.sql
+//go:embed queries.sql schema.sql
 var queriesFS embed.FS
 
 type Queries struct {

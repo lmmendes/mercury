@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"mercury/internal/models"
 
-	"github.com/knadh/goyesql/v2"
-
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
@@ -358,18 +356,12 @@ func (r *repository) DeleteUser(ctx context.Context, id int) error {
 	return nil
 }
 
-// Add a new private function to handle table initialization
+// Update the initializeTables function
 func initializeTables(db *sqlx.DB) error {
-	// Read the initialization query
-	queryBytes, err := queriesFS.ReadFile("queries.sql")
+	// Read the schema file
+	schemaBytes, err := queriesFS.ReadFile("schema.sql")
 	if err != nil {
-		return fmt.Errorf("failed to read queries file: %w", err)
-	}
-
-	// Parse queries
-	queries, err := goyesql.ParseBytes(queryBytes)
-	if err != nil {
-		return fmt.Errorf("failed to parse queries: %w", err)
+		return fmt.Errorf("failed to read schema file: %w", err)
 	}
 
 	// Start a transaction
@@ -377,13 +369,11 @@ func initializeTables(db *sqlx.DB) error {
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
+	defer tx.Rollback()
 
-	// Execute the initialization query
-	if _, err := tx.Exec(queries["initialize-tables"].Query); err != nil {
-		if rbErr := tx.Rollback(); rbErr != nil {
-			return fmt.Errorf("failed to execute initialization query: %w, failed to rollback: %v", err, rbErr)
-		}
-		return fmt.Errorf("failed to execute initialization query: %w", err)
+	// Execute the schema
+	if _, err := tx.Exec(string(schemaBytes)); err != nil {
+		return fmt.Errorf("failed to execute schema: %w", err)
 	}
 
 	// Commit the transaction
