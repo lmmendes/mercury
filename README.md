@@ -193,22 +193,36 @@ QUIT
 ### Project Structure
 ```
 .
+├── Makefile               # Build and development commands
 ├── cmd/
-│   └── mercury/
-│       └── main.go       # Main application entry point
+│   └── main.go           # Main application entry point
 ├── config/
-│   └── default.yaml     # Default configuration
+│   └── default.yaml      # Default configuration
+├── bruno/                # API testing collections
+│   └── mercury-api/
+│       ├── accounts/     # Account-related requests
+│       ├── inboxes/      # Inbox-related requests
+│       ├── messages/     # Message-related requests
+│       ├── rules/        # Rule-related requests
+│       └── environments/ # Environment configurations
 ├── internal/
-│   ├── api/            # HTTP API handlers
-│   ├── config/         # Configuration management
-│   ├── core/           # Core business logic
-│   ├── logger/         # Logging package
-│   ├── models/         # Data models
-│   ├── smtp/           # SMTP server implementation
+│   ├── api/             # HTTP API implementation
+│   │   ├── handlers.go
+│   │   ├── middleware.go
+│   │   └── server.go
+│   ├── config/          # Configuration management
+│   ├── core/            # Business logic
+│   │   ├── accounts.go
+│   │   ├── inboxes.go
+│   │   ├── messages.go
+│   │   └── rules.go
+│   ├── logger/          # Logging package
+│   ├── models/          # Data models and pagination
+│   ├── smtp/            # SMTP server implementation
 │   ├── imap/           # IMAP server implementation
-│   └── storage/        # Database operations
-├── bruno/              # API testing collection
-│   └── mercury-api/    # Bruno request collections
+│   └── storage/         # Database operations
+│       ├── queries.sql
+│       └── schema.sql
 ```
 
 ### API Testing with Bruno
