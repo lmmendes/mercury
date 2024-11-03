@@ -6,9 +6,11 @@ import (
 	"io"
 	"mercury/internal/core"
 	"mercury/internal/models"
+	"time"
 
 	"github.com/emersion/go-message"
 	"github.com/emersion/go-smtp"
+	"golang.org/x/net/context"
 )
 
 type SmtpServer struct {
@@ -30,8 +32,8 @@ func NewServer(core *core.Core) *SmtpServer {
 	be := &SmtpBackend{core: core}
 	s := smtp.NewServer(be)
 
-	s.Addr = core.Config.SMTPPort
-	s.Domain = "localhost"
+	s.Addr = core.Config.Server.SMTP.Port
+	s.Domain = core.Config.Server.SMTP.Hostname
 	s.AllowInsecureAuth = true
 
 	return &SmtpServer{
@@ -59,6 +61,10 @@ func (s *SmtpSession) Rcpt(to string, _ *smtp.RcptOptions) error {
 }
 
 func (s *SmtpSession) Data(r io.Reader) error {
+	// Create a context with timeout for the email processing
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	// Parse the email to get the subject
 	buf := new(bytes.Buffer)
 	if _, err := buf.ReadFrom(r); err != nil {
@@ -88,7 +94,7 @@ func (s *SmtpSession) Data(r io.Reader) error {
 	}
 
 	// Look up the inbox ID based on the recipient email
-	inbox, err := s.core.Repository.GetInboxByEmail(s.to)
+	inbox, err := s.core.Repository.GetInboxByEmail(ctx, s.to)
 	if err != nil {
 		s.core.Logger.Error("Failed to find inbox for email %s: %v", s.to, err)
 		return err
@@ -119,4 +125,8 @@ func (s *SmtpSession) Logout() error {
 
 func (s *SmtpSession) AuthPlain(username, password string) error {
 	return nil // TODO: For now, accept all auth
+}
+
+func (s *SmtpServer) Shutdown(ctx context.Context) error {
+	return s.smtp.Close()
 }

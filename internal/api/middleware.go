@@ -1,37 +1,31 @@
 package api
 
 import (
-	"mercury/internal/core"
-	"net/http"
+	"context"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
 
-func (s *Server) errorHandler(err error, c echo.Context) {
-	var (
-		code = http.StatusInternalServerError
-		msg  interface{}
-	)
+func TimeoutMiddleware(timeout time.Duration) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			ctx, cancel := context.WithTimeout(c.Request().Context(), timeout)
+			defer cancel()
 
-	if he, ok := err.(*echo.HTTPError); ok {
-		code = he.Code
-		msg = he.Message
-	} else {
-		msg = core.APIError{
-			Code:    code,
-			Message: err.Error(),
-		}
-	}
+			c.SetRequest(c.Request().WithContext(ctx))
 
-	// Send error response
-	if !c.Response().Committed {
-		if c.Request().Method == http.MethodHead {
-			err = c.NoContent(code)
-		} else {
-			err = c.JSON(code, msg)
-		}
-		if err != nil {
-			s.core.Logger.Error("Failed to send error response: %v", err)
+			done := make(chan error)
+			go func() {
+				done <- next(c)
+			}()
+
+			select {
+			case err := <-done:
+				return err
+			case <-ctx.Done():
+				return echo.NewHTTPError(408, "Request timeout")
+			}
 		}
 	}
 }
