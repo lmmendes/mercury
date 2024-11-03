@@ -10,7 +10,7 @@ type Base struct {
 	UpdatedAt null.Time `json:"updated_at" db:"updated_at"`
 }
 
-type Account struct {
+type Project struct {
 	Base
 	ID   int    `json:"id" db:"id"`
 	Name string `json:"name" db:"name" validate:"required,min=2,max=100"`
@@ -18,7 +18,7 @@ type Account struct {
 
 type Inbox struct {
 	Base
-	AccountID int    `json:"account_id" db:"account_id" validate:"required"`
+	ProjectID int    `json:"project_id" db:"account_id" validate:"required"`
 	Email     string `json:"email" db:"email" validate:"required,email"`
 }
 
@@ -29,12 +29,25 @@ type User struct {
 	Password      string    `json:"password" db:"password"`
 	Email         string    `json:"email" db:"email"`
 	Status        string    `json:"status" db:"status"`
-	Kind          string    `json:"kind" db:"kind"`
+	Role          string    `json:"role" db:"role"`
 	PasswordLogin bool      `json:"password_login" db:"password_login"`
 	LoggedinAt    null.Time `json:"loggedin_at" db:"loggedin_at"`
 }
 
-type Rule struct {
+type ProjectUser struct {
+	Base
+	ProjectID int    `json:"project_id" db:"project_id" validate:"required"`
+	UserID    int    `json:"user_id" db:"user_id" validate:"required"`
+	Role      string `json:"role" db:"role" validate:"required"`
+}
+
+type UserToken struct {
+	Base
+	UserID int    `json:"user_id" db:"user_id" validate:"required"`
+	Token  string `json:"token" db:"token" validate:"required"`
+}
+
+type ForwardRule struct {
 	Base
 	InboxID  int    `json:"inbox_id" db:"inbox_id" validate:"required"`
 	Sender   string `json:"sender" db:"sender" validate:"omitempty,email"`

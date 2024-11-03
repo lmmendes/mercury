@@ -435,50 +435,92 @@ func (r *repository) DeleteUser(id int) error {
 
 func (r *repository) InitializeTables() error {
 	queries := []string{
-		`CREATE TABLE IF NOT EXISTS accounts (
-			id SERIAL PRIMARY KEY,
-			name TEXT,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		`
+		-- Ruby on Rails inspired schema_migrations table
+		CREATE TABLE IF NOT EXISTS schema_migrations (
+		    version VARCHAR(255) PRIMARY KEY,
 		)`,
-		`CREATE TABLE IF NOT EXISTS inboxes (
-			id SERIAL PRIMARY KEY,
-			account_id INTEGER REFERENCES accounts(id) ON DELETE CASCADE,
-			email TEXT,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		`
+		-- Create custom types for roles if they don't exist
+		DO $$
+		BEGIN
+		    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+		        CREATE TYPE user_role AS ENUM ('user', 'admin');
+		    END IF;
+
+		    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'project_role') THEN
+		        CREATE TYPE project_role AS ENUM ('user', 'admin');
+		    END IF;
+		END
+		$$;`,
+		`-- Projects table
+		CREATE TABLE IF NOT EXISTS projects (
+		    id SERIAL PRIMARY KEY,
+		    name VARCHAR(100) NOT NULL CHECK (LENGTH(name) >= 2),
+		    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
-		`CREATE TABLE IF NOT EXISTS rules (
-			id SERIAL PRIMARY KEY,
-			inbox_id INTEGER REFERENCES inboxes(id) ON DELETE CASCADE,
-			sender TEXT,
-			receiver TEXT,
-			subject TEXT,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		`-- Users table
+		CREATE TABLE IF NOT EXISTS users (
+		    id SERIAL PRIMARY KEY,
+		    name VARCHAR(255) NOT NULL,
+		    username VARCHAR(255) NOT NULL UNIQUE,
+		    password VARCHAR(255) NOT NULL,
+		    email VARCHAR(255) NOT NULL UNIQUE,
+		    status VARCHAR(50) NOT NULL,
+		    role user_role NOT NULL DEFAULT 'user',
+		    password_login BOOLEAN NOT NULL DEFAULT true,
+		    loggedin_at TIMESTAMP WITH TIME ZONE,
+		    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
-		`CREATE TABLE IF NOT EXISTS messages (
-			id SERIAL PRIMARY KEY,
-			inbox_id INTEGER REFERENCES inboxes(id) ON DELETE CASCADE,
-			sender TEXT,
-			receiver TEXT,
-			subject TEXT,
-			body TEXT,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		`-- Project Users junction table
+		CREATE TABLE IF NOT EXISTS project_users (
+		    id SERIAL PRIMARY KEY,
+		    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+		    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		    role project_role NOT NULL DEFAULT 'user',
+		    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		    UNIQUE(project_id, user_id)
 		)`,
-		`CREATE TABLE IF NOT EXISTS users (
-			id SERIAL PRIMARY KEY,
-			name TEXT,
-			username TEXT UNIQUE,
-			password TEXT,
-			email TEXT,
-			status TEXT,
-			kind TEXT,
-			password_login BOOLEAN DEFAULT false,
-			loggedin_at TIMESTAMP WITH TIME ZONE,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		`-- Inboxes table
+		CREATE TABLE IF NOT EXISTS inboxes (
+		    id SERIAL PRIMARY KEY,
+		    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+		    email VARCHAR(255) NOT NULL UNIQUE,
+		    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`-- User Tokens table
+		CREATE TABLE IF NOT EXISTS user_tokens (
+		    id SERIAL PRIMARY KEY,
+		    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		    token VARCHAR(255) NOT NULL UNIQUE,
+		    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`-- Forward Rules table
+		CREATE TABLE IF NOT EXISTS forward_rules (
+		    id SERIAL PRIMARY KEY,
+		    inbox_id INTEGER NOT NULL REFERENCES inboxes(id) ON DELETE CASCADE,
+		    sender VARCHAR(255),
+		    receiver VARCHAR(255),
+		    subject VARCHAR(200),
+		    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		    CHECK (sender IS NOT NULL OR receiver IS NOT NULL OR subject IS NOT NULL)
+		)`,
+		`-- Messages table
+		CREATE TABLE IF NOT EXISTS messages (
+		    id SERIAL PRIMARY KEY,
+		    inbox_id INTEGER NOT NULL REFERENCES inboxes(id) ON DELETE CASCADE,
+		    sender VARCHAR(255) NOT NULL,
+		    receiver VARCHAR(255) NOT NULL,
+		    subject VARCHAR(200) NOT NULL,
+		    body TEXT NOT NULL,
+		    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
 	}
 
