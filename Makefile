@@ -1,7 +1,12 @@
-.PHONY: dev db-up db-down db-clean test
+.PHONY: dev db-up db-down db-clean test build
+
+BIN := mercury
+
+build:
+	CGO_ENABLED=0 go build -ldflags="-s -w" cmd/*.go
 
 dev: db-up
-	go run ./cmd/mercury
+	go run ./cmd/
 
 db-up:
 	docker compose up -d db

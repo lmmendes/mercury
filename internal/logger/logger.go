@@ -70,7 +70,14 @@ func (l *Logger) log(level Level, format string, v ...interface{}) {
 	timestamp := time.Now().Format("2006-01-02 15:04:05.000")
 	logLine := fmt.Sprintf("[%s] %-5s %s:%d: %s", timestamp, level, file, line, msg)
 
-	l.Logger.Output(2, logLine)
+	if err := l.Logger.Output(2, logLine); err != nil {
+		// Since this is a logging error, we'll write directly to stderr
+		fmt.Fprintf(os.Stderr, "failed to log message: %v", err)
+		if level == FATAL {
+			os.Exit(1)
+		}
+		return
+	}
 
 	if level == FATAL {
 		os.Exit(1)
