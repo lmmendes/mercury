@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"mercury/internal/logger"
 	"mercury/internal/models"
 	"mercury/internal/storage"
@@ -29,13 +30,18 @@ type Core struct {
 	MessageService MessageService
 }
 
-func NewCore(config *Config, db *sqlx.DB) *Core {
+func NewCore(config *Config, db *sqlx.DB) (*Core, error) {
 	logger := logger.New(os.Stdout, config.LogLevel)
+
+	repo, err := storage.NewRepository(db)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create repository: %w", err)
+	}
 
 	core := &Core{
 		Config:     config,
 		Logger:     logger,
-		Repository: storage.NewRepository(db),
+		Repository: repo,
 	}
 
 	core.AccountService = NewAccountService(core)
@@ -43,7 +49,7 @@ func NewCore(config *Config, db *sqlx.DB) *Core {
 	core.RuleService = NewRuleService(core)
 	core.MessageService = NewMessageService(core)
 
-	return core
+	return core, nil
 }
 
 func LoadConfig() *Config {

@@ -63,14 +63,18 @@ func main() {
 	}
 	defer db.Close()
 
-	// Create core with new config
-	core := core.NewCore(&core.Config{
+	// Create core
+	core, err := core.NewCore(&core.Config{
 		SMTPPort:    cfg.Server.SMTP.Port,
 		HTTPPort:    cfg.Server.HTTP.Port,
 		IMAPPort:    cfg.Server.IMAP.Port,
 		DatabaseURL: cfg.Database.URL,
 		LogLevel:    cfg.Logging.Level,
 	}, db)
+	if err != nil {
+		fmt.Printf("Failed to create core: %v\n", err)
+		os.Exit(1)
+	}
 
 	core.Logger.Info("Starting application with configuration from %s", *configFile)
 
@@ -117,7 +121,7 @@ func main() {
 	select {
 	case <-stop:
 		core.Logger.Info("Shutting down servers...")
-		// Implement graceful shutdown here
+		// TODO: Implement graceful shutdown here
 	case err := <-errChan:
 		core.Logger.Fatal("Server error: %v", err)
 	}
