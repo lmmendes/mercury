@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
@@ -64,13 +65,7 @@ func main() {
 	defer db.Close()
 
 	// Create core
-	core, err := core.NewCore(&core.Config{
-		SMTPPort:    cfg.Server.SMTP.Port,
-		HTTPPort:    cfg.Server.HTTP.Port,
-		IMAPPort:    cfg.Server.IMAP.Port,
-		DatabaseURL: cfg.Database.URL,
-		LogLevel:    cfg.Logging.Level,
-	}, db)
+	core, err := core.NewCore(cfg, db)
 	if err != nil {
 		fmt.Printf("Failed to create core: %v\n", err)
 		os.Exit(1)
@@ -78,7 +73,11 @@ func main() {
 
 	core.Logger.Info("Starting application with configuration from %s", *configFile)
 
-	if err := core.Repository.InitializeTables(); err != nil {
+	// Create context with timeout for initialization
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := core.Repository.InitializeTables(ctx); err != nil {
 		core.Logger.Fatal("Failed to initialize database tables: %v", err)
 	}
 

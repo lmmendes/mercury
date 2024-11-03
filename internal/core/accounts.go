@@ -1,17 +1,18 @@
 package core
 
 import (
+	"context"
 	"mercury/internal/logger"
 	"mercury/internal/models"
 	"mercury/internal/storage"
 )
 
 type AccountService interface {
-	Create(account *models.Account) error
-	Get(id int) (*models.Account, error)
-	Update(account *models.Account) error
-	Delete(id int) error
-	List(limit, offset int) (*models.PaginatedResponse, error)
+	Create(ctx context.Context, account *models.Account) error
+	Get(ctx context.Context, id int) (*models.Account, error)
+	Update(ctx context.Context, account *models.Account) error
+	Delete(ctx context.Context, id int) error
+	List(ctx context.Context, limit, offset int) (*models.PaginatedResponse, error)
 }
 
 type accountService struct {
@@ -26,8 +27,8 @@ func NewAccountService(core *Core) AccountService {
 	}
 }
 
-func (s *accountService) Create(account *models.Account) error {
-	if err := s.repo.CreateAccount(account); err != nil {
+func (s *accountService) Create(ctx context.Context, account *models.Account) error {
+	if err := s.repo.CreateAccount(ctx, account); err != nil {
 		s.logger.Error("Failed to create account: %v", err)
 		return err
 	}
@@ -35,8 +36,8 @@ func (s *accountService) Create(account *models.Account) error {
 	return nil
 }
 
-func (s *accountService) Get(id int) (*models.Account, error) {
-	account, err := s.repo.GetAccount(id)
+func (s *accountService) Get(ctx context.Context, id int) (*models.Account, error) {
+	account, err := s.repo.GetAccount(ctx, id)
 	if err != nil {
 		s.logger.Error("Failed to get account %d: %v", id, err)
 		return nil, err
@@ -45,8 +46,8 @@ func (s *accountService) Get(id int) (*models.Account, error) {
 	return account, nil
 }
 
-func (s *accountService) Update(account *models.Account) error {
-	if err := s.repo.UpdateAccount(account); err != nil {
+func (s *accountService) Update(ctx context.Context, account *models.Account) error {
+	if err := s.repo.UpdateAccount(ctx, account); err != nil {
 		s.logger.Error("Failed to update account %d: %v", account.ID, err)
 		return err
 	}
@@ -54,8 +55,8 @@ func (s *accountService) Update(account *models.Account) error {
 	return nil
 }
 
-func (s *accountService) Delete(id int) error {
-	if err := s.repo.DeleteAccount(id); err != nil {
+func (s *accountService) Delete(ctx context.Context, id int) error {
+	if err := s.repo.DeleteAccount(ctx, id); err != nil {
 		s.logger.Error("Failed to delete account %d: %v", id, err)
 		return err
 	}
@@ -63,8 +64,8 @@ func (s *accountService) Delete(id int) error {
 	return nil
 }
 
-func (s *accountService) List(limit, offset int) (*models.PaginatedResponse, error) {
-	accounts, total, err := s.repo.ListAccounts(limit, offset)
+func (s *accountService) List(ctx context.Context, limit, offset int) (*models.PaginatedResponse, error) {
+	accounts, total, err := s.repo.ListAccounts(ctx, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to list accounts: %v", err)
 		return nil, err

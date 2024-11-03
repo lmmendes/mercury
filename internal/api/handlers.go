@@ -9,6 +9,8 @@ import (
 )
 
 func (s *Server) createAccount(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	var account models.Account
 	if err := c.Bind(&account); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
@@ -18,7 +20,7 @@ func (s *Server) createAccount(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	if err := s.core.AccountService.Create(&account); err != nil {
+	if err := s.core.AccountService.Create(ctx, &account); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 
@@ -26,6 +28,8 @@ func (s *Server) createAccount(c echo.Context) error {
 }
 
 func (s *Server) getAccounts(c echo.Context) error {
+	ctx := c.Request().Context()
+
 	var query models.PaginationQuery
 	if err := c.Bind(&query); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
@@ -39,7 +43,7 @@ func (s *Server) getAccounts(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	response, err := s.core.AccountService.List(query.Limit, query.Offset)
+	response, err := s.core.AccountService.List(ctx, query.Limit, query.Offset)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
@@ -48,7 +52,7 @@ func (s *Server) getAccounts(c echo.Context) error {
 
 func (s *Server) getAccount(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("id"))
-	account, err := s.core.AccountService.Get(id)
+	account, err := s.core.AccountService.Get(c.Request().Context(), id)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
@@ -70,7 +74,7 @@ func (s *Server) updateAccount(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	if err := s.core.AccountService.Update(&account); err != nil {
+	if err := s.core.AccountService.Update(c.Request().Context(), &account); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 
@@ -79,7 +83,7 @@ func (s *Server) updateAccount(c echo.Context) error {
 
 func (s *Server) deleteAccount(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("id"))
-	if err := s.core.AccountService.Delete(id); err != nil {
+	if err := s.core.AccountService.Delete(c.Request().Context(), id); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	return c.NoContent(http.StatusNoContent)
@@ -97,7 +101,7 @@ func (s *Server) createInbox(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	if err := s.core.InboxService.Create(&inbox); err != nil {
+	if err := s.core.InboxService.Create(c.Request().Context(), &inbox); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 
@@ -120,7 +124,7 @@ func (s *Server) getInboxes(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	response, err := s.core.InboxService.ListByAccount(accountID, query.Limit, query.Offset)
+	response, err := s.core.InboxService.ListByAccount(c.Request().Context(), accountID, query.Limit, query.Offset)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
@@ -129,7 +133,7 @@ func (s *Server) getInboxes(c echo.Context) error {
 
 func (s *Server) getInbox(c echo.Context) error {
 	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
-	inbox, err := s.core.InboxService.Get(inboxID)
+	inbox, err := s.core.InboxService.Get(c.Request().Context(), inboxID)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
@@ -156,7 +160,7 @@ func (s *Server) updateInbox(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	if err := s.core.InboxService.Update(&inbox); err != nil {
+	if err := s.core.InboxService.Update(c.Request().Context(), &inbox); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 
@@ -165,7 +169,7 @@ func (s *Server) updateInbox(c echo.Context) error {
 
 func (s *Server) deleteInbox(c echo.Context) error {
 	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
-	if err := s.core.InboxService.Delete(inboxID); err != nil {
+	if err := s.core.InboxService.Delete(c.Request().Context(), inboxID); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	return c.NoContent(http.StatusNoContent)
@@ -183,7 +187,7 @@ func (s *Server) createRule(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	if err := s.core.RuleService.Create(&rule); err != nil {
+	if err := s.core.RuleService.Create(c.Request().Context(), &rule); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 
@@ -206,7 +210,7 @@ func (s *Server) getRules(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	response, err := s.core.RuleService.ListByInbox(inboxID, query.Limit, query.Offset)
+	response, err := s.core.RuleService.ListByInbox(c.Request().Context(), inboxID, query.Limit, query.Offset)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
@@ -215,7 +219,7 @@ func (s *Server) getRules(c echo.Context) error {
 
 func (s *Server) getRule(c echo.Context) error {
 	ruleID, _ := strconv.Atoi(c.Param("ruleId"))
-	rule, err := s.core.RuleService.Get(ruleID)
+	rule, err := s.core.RuleService.Get(c.Request().Context(), ruleID)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
@@ -242,7 +246,7 @@ func (s *Server) updateRule(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	if err := s.core.RuleService.Update(&rule); err != nil {
+	if err := s.core.RuleService.Update(c.Request().Context(), &rule); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 
@@ -251,7 +255,7 @@ func (s *Server) updateRule(c echo.Context) error {
 
 func (s *Server) deleteRule(c echo.Context) error {
 	ruleID, _ := strconv.Atoi(c.Param("ruleId"))
-	if err := s.core.RuleService.Delete(ruleID); err != nil {
+	if err := s.core.RuleService.Delete(c.Request().Context(), ruleID); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	return c.NoContent(http.StatusNoContent)
@@ -273,7 +277,7 @@ func (s *Server) getMessages(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	response, err := s.core.MessageService.ListByInbox(inboxID, query.Limit, query.Offset)
+	response, err := s.core.MessageService.ListByInbox(c.Request().Context(), inboxID, query.Limit, query.Offset)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}

@@ -1,17 +1,18 @@
 package core
 
 import (
+	"context"
 	"mercury/internal/logger"
 	"mercury/internal/models"
 	"mercury/internal/storage"
 )
 
 type RuleService interface {
-	Create(rule *models.Rule) error
-	Get(id int) (*models.Rule, error)
-	Update(rule *models.Rule) error
-	Delete(id int) error
-	ListByInbox(inboxID, limit, offset int) (*models.PaginatedResponse, error)
+	Create(ctx context.Context, rule *models.Rule) error
+	Get(ctx context.Context, id int) (*models.Rule, error)
+	Update(ctx context.Context, rule *models.Rule) error
+	Delete(ctx context.Context, id int) error
+	ListByInbox(ctx context.Context, inboxID, limit, offset int) (*models.PaginatedResponse, error)
 }
 
 type ruleService struct {
@@ -26,8 +27,8 @@ func NewRuleService(core *Core) RuleService {
 	}
 }
 
-func (s *ruleService) Create(rule *models.Rule) error {
-	if err := s.repo.CreateRule(rule); err != nil {
+func (s *ruleService) Create(ctx context.Context, rule *models.Rule) error {
+	if err := s.repo.CreateRule(ctx, rule); err != nil {
 		s.logger.Error("Failed to create rule: %v", err)
 		return err
 	}
@@ -35,8 +36,8 @@ func (s *ruleService) Create(rule *models.Rule) error {
 	return nil
 }
 
-func (s *ruleService) Get(id int) (*models.Rule, error) {
-	rule, err := s.repo.GetRule(id)
+func (s *ruleService) Get(ctx context.Context, id int) (*models.Rule, error) {
+	rule, err := s.repo.GetRule(ctx, id)
 	if err != nil {
 		s.logger.Error("Failed to get rule %d: %v", id, err)
 		return nil, err
@@ -45,8 +46,8 @@ func (s *ruleService) Get(id int) (*models.Rule, error) {
 	return rule, nil
 }
 
-func (s *ruleService) Update(rule *models.Rule) error {
-	if err := s.repo.UpdateRule(rule); err != nil {
+func (s *ruleService) Update(ctx context.Context, rule *models.Rule) error {
+	if err := s.repo.UpdateRule(ctx, rule); err != nil {
 		s.logger.Error("Failed to update rule %d: %v", rule.ID, err)
 		return err
 	}
@@ -54,8 +55,8 @@ func (s *ruleService) Update(rule *models.Rule) error {
 	return nil
 }
 
-func (s *ruleService) Delete(id int) error {
-	if err := s.repo.DeleteRule(id); err != nil {
+func (s *ruleService) Delete(ctx context.Context, id int) error {
+	if err := s.repo.DeleteRule(ctx, id); err != nil {
 		s.logger.Error("Failed to delete rule %d: %v", id, err)
 		return err
 	}
@@ -63,8 +64,8 @@ func (s *ruleService) Delete(id int) error {
 	return nil
 }
 
-func (s *ruleService) ListByInbox(inboxID, limit, offset int) (*models.PaginatedResponse, error) {
-	rules, total, err := s.repo.ListRulesByInbox(inboxID, limit, offset)
+func (s *ruleService) ListByInbox(ctx context.Context, inboxID, limit, offset int) (*models.PaginatedResponse, error) {
+	rules, total, err := s.repo.ListRulesByInbox(ctx, inboxID, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to list rules for inbox %d: %v", inboxID, err)
 		return nil, err

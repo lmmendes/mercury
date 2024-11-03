@@ -1,17 +1,18 @@
 package core
 
 import (
+	"context"
 	"mercury/internal/logger"
 	"mercury/internal/models"
 	"mercury/internal/storage"
 )
 
 type InboxService interface {
-	Create(inbox *models.Inbox) error
-	Get(id int) (*models.Inbox, error)
-	Update(inbox *models.Inbox) error
-	Delete(id int) error
-	ListByAccount(accountID, limit, offset int) (*models.PaginatedResponse, error)
+	Create(ctx context.Context, inbox *models.Inbox) error
+	Get(ctx context.Context, id int) (*models.Inbox, error)
+	Update(ctx context.Context, inbox *models.Inbox) error
+	Delete(ctx context.Context, id int) error
+	ListByAccount(ctx context.Context, accountID, limit, offset int) (*models.PaginatedResponse, error)
 }
 
 type inboxService struct {
@@ -26,8 +27,8 @@ func NewInboxService(core *Core) InboxService {
 	}
 }
 
-func (s *inboxService) Create(inbox *models.Inbox) error {
-	if err := s.repo.CreateInbox(inbox); err != nil {
+func (s *inboxService) Create(ctx context.Context, inbox *models.Inbox) error {
+	if err := s.repo.CreateInbox(ctx, inbox); err != nil {
 		s.logger.Error("Failed to create inbox: %v", err)
 		return err
 	}
@@ -35,8 +36,8 @@ func (s *inboxService) Create(inbox *models.Inbox) error {
 	return nil
 }
 
-func (s *inboxService) Get(id int) (*models.Inbox, error) {
-	inbox, err := s.repo.GetInbox(id)
+func (s *inboxService) Get(ctx context.Context, id int) (*models.Inbox, error) {
+	inbox, err := s.repo.GetInbox(ctx, id)
 	if err != nil {
 		s.logger.Error("Failed to get inbox %d: %v", id, err)
 		return nil, err
@@ -45,8 +46,8 @@ func (s *inboxService) Get(id int) (*models.Inbox, error) {
 	return inbox, nil
 }
 
-func (s *inboxService) Update(inbox *models.Inbox) error {
-	if err := s.repo.UpdateInbox(inbox); err != nil {
+func (s *inboxService) Update(ctx context.Context, inbox *models.Inbox) error {
+	if err := s.repo.UpdateInbox(ctx, inbox); err != nil {
 		s.logger.Error("Failed to update inbox %d: %v", inbox.ID, err)
 		return err
 	}
@@ -54,8 +55,8 @@ func (s *inboxService) Update(inbox *models.Inbox) error {
 	return nil
 }
 
-func (s *inboxService) Delete(id int) error {
-	if err := s.repo.DeleteInbox(id); err != nil {
+func (s *inboxService) Delete(ctx context.Context, id int) error {
+	if err := s.repo.DeleteInbox(ctx, id); err != nil {
 		s.logger.Error("Failed to delete inbox %d: %v", id, err)
 		return err
 	}
@@ -63,8 +64,8 @@ func (s *inboxService) Delete(id int) error {
 	return nil
 }
 
-func (s *inboxService) ListByAccount(accountID, limit, offset int) (*models.PaginatedResponse, error) {
-	inboxes, total, err := s.repo.ListInboxesByAccount(accountID, limit, offset)
+func (s *inboxService) ListByAccount(ctx context.Context, accountID, limit, offset int) (*models.PaginatedResponse, error) {
+	inboxes, total, err := s.repo.ListInboxesByAccount(ctx, accountID, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to list inboxes for account %d: %v", accountID, err)
 		return nil, err

@@ -29,6 +29,9 @@ func NewServer(core *core.Core) *Server {
 		echo: e,
 	}
 
+	// Add timeout middleware with a 30-second timeout
+	e.Use(TimeoutMiddleware(30 * time.Second))
+
 	// Set custom validator
 	e.Validator = &CustomValidator{validator: validator.New()}
 
@@ -38,14 +41,33 @@ func NewServer(core *core.Core) *Server {
 	e.Use(middleware.CORS())
 	e.Use(middleware.RequestID())
 	e.Use(middleware.Secure())
-	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
-		Timeout: 30 * time.Second,
-	}))
 
+	// Set custom error handler
 	e.HTTPErrorHandler = s.errorHandler
 
 	s.routes()
 	return s
+}
+
+// Add the error handler method
+func (s *Server) errorHandler(err error, c echo.Context) {
+	if he, ok := err.(*echo.HTTPError); ok {
+		if he.Internal != nil {
+			if herr, ok := he.Internal.(*echo.HTTPError); ok {
+				he = herr
+			}
+		}
+		if err := c.JSON(he.Code, he.Message); err != nil {
+			s.core.Logger.Error("Failed to send error response: %v", err)
+		}
+		return
+	}
+
+	if err := s.core.HandleError(err, 500); err != nil {
+		if err := c.JSON(500, err); err != nil {
+			s.core.Logger.Error("Failed to send error response: %v", err)
+		}
+	}
 }
 
 func (s *Server) routes() {
@@ -75,5 +97,5 @@ func (s *Server) routes() {
 }
 
 func (s *Server) ListenAndServe() error {
-	return s.echo.Start(s.core.Config.HTTPPort)
+	return s.echo.Start(s.core.Config.Server.HTTP.Port)
 }

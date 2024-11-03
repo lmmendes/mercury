@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"mercury/internal/logger"
 	"mercury/internal/models"
@@ -8,8 +9,8 @@ import (
 )
 
 type MessageService interface {
-	Store(message *models.Message) error
-	ListByInbox(inboxID, limit, offset int) (*models.PaginatedResponse, error)
+	Store(ctx context.Context, message *models.Message) error
+	ListByInbox(ctx context.Context, inboxID, limit, offset int) (*models.PaginatedResponse, error)
 }
 
 type messageService struct {
@@ -24,9 +25,9 @@ func NewMessageService(core *Core) MessageService {
 	}
 }
 
-func (s *messageService) Store(message *models.Message) error {
+func (s *messageService) Store(ctx context.Context, message *models.Message) error {
 	// First try to match against rules
-	rules, _, err := s.repo.ListRules(1000, 0)
+	rules, _, err := s.repo.ListRules(ctx, 1000, 0)
 	if err != nil {
 		s.logger.Error("Error querying rules: %v", err)
 		return err
@@ -36,12 +37,12 @@ func (s *messageService) Store(message *models.Message) error {
 		if rule.Sender == message.Sender && rule.Receiver == message.Receiver && rule.Subject == message.Subject {
 			message.InboxID = rule.InboxID
 			s.logger.Debug("Message matched rule for inbox %d", rule.InboxID)
-			return s.repo.CreateMessage(message)
+			return s.repo.CreateMessage(ctx, message)
 		}
 	}
 
 	// If no rule matches, store in the inbox with the matching email address
-	inbox, err := s.repo.GetInboxByEmail(message.Receiver)
+	inbox, err := s.repo.GetInboxByEmail(ctx, message.Receiver)
 	if err != nil {
 		s.logger.Error("Error finding inbox for email %s: %v", message.Receiver, err)
 		return err
@@ -54,11 +55,11 @@ func (s *messageService) Store(message *models.Message) error {
 
 	message.InboxID = inbox.ID
 	s.logger.Info("Storing message in inbox %d", inbox.ID)
-	return s.repo.CreateMessage(message)
+	return s.repo.CreateMessage(ctx, message)
 }
 
-func (s *messageService) ListByInbox(inboxID, limit, offset int) (*models.PaginatedResponse, error) {
-	messages, total, err := s.repo.ListMessagesByInbox(inboxID, limit, offset)
+func (s *messageService) ListByInbox(ctx context.Context, inboxID, limit, offset int) (*models.PaginatedResponse, error) {
+	messages, total, err := s.repo.ListMessagesByInbox(ctx, inboxID, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to list messages for inbox %d: %v", inboxID, err)
 		return nil, err
