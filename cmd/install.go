@@ -1,27 +1,29 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"mercury/internal/config"
 
 	"github.com/jmoiron/sqlx"
 )
 
-func install(db *sqlx.DB, prompt, idempotent bool) {
+func install(db *sqlx.DB, config *config.Config, prompt, idempotent bool) {
 	// Check if the database is already initialized.
 	// If the database is not initialized, we should get "v0.0.0" as the version.
 	version, err := getLastMigrationVersion(db)
 	if err != nil {
-		log.Fatalf("error getting last migration version: %v", err)
+		logger.Fatalf("error getting last migration version: %v", err)
 	}
 
 	if version != "v0.0.0" {
-		log.Fatalf("database is already initialized. Current version is %s", version)
+		logger.Fatalf("database is already initialized. Current version is %s", version)
 	}
 
 	// Fetch all available migrations and run them.
-	lastVer, toRun, err := getPendingMigrations(db)
+	_, toRun, err := getPendingMigrations(db)
 	if err != nil {
-		log.Fatalf("error checking migrations: %v", err)
+		logger.Fatalf("error checking migrations: %v", err)
 	}
 
 	// No migrations to run.
@@ -38,16 +40,11 @@ func install(db *sqlx.DB, prompt, idempotent bool) {
 	// Execute migrations in succession.
 	for _, m := range toRun {
 		log.Printf("running migration %s", m.version)
-		if err := m.fn(db, ko, log); err != nil {
+		if err := m.fn(db, config, logger); err != nil {
 			log.Fatalf("error running migration %s: %v", m.version, err)
 		}
 
-		// Record the migration version in the settings table. There was no
-		// settings table until v0.7.0, so ignore the no-table errors.
 		if err := recordMigrationVersion(m.version, db); err != nil {
-			if isTableNotExistErr(err) {
-				continue
-			}
 			log.Fatalf("error recording migration version %s: %v", m.version, err)
 		}
 	}
@@ -62,4 +59,19 @@ func checkSchema(db *sqlx.DB) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func checkInstall(db *sqlx.DB) {
+	// Check if the DB schema is installed.
+	if ok, err := checkSchema(db); err != nil {
+		logger.Fatalf("error checking schema in DB: %v", err)
+	} else if !ok {
+		logger.Fatal("the database does not appear to be setup. Run --install.")
+	}
+}
+
+func recordMigrationVersion(version string, db *sqlx.DB) error {
+	_, err := db.Exec(fmt.Sprintf(`INSERT INTO schema_migrations (version)
+	VALUES('%s')`, version))
+	return err
 }

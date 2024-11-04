@@ -2,13 +2,11 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -19,13 +17,11 @@ import (
 	"mercury/internal/smtp"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/knadh/koanf/providers/env"
 	_ "github.com/lib/pq"
 )
 
 var (
-	db *sqlx.DB
-	lo = log.New(os.Stderr, "", 0)
+	logger = log.New(os.Stderr, "", 0)
 )
 
 func initDB(cfg *config.Config) (*sqlx.DB, error) {
@@ -144,45 +140,32 @@ func handleGracefulShutdown(core *core.Core, servers []ServerInstance) error {
 	return nil
 }
 
-func init() {
-	ko := initFlags()
-	initConfigFiles(ko.Strings("config"), ko)
+func main() {
 
-	// Load environment variables
-	if err := ko.Load(env.Provider("MERCURY_", ".", func(s string) string {
-		return strings.Replace(strings.ToLower(
-			strings.TrimPrefix(s, "MERCURY_")), "__", ".", -1)
-	}), nil); err != nil {
-		lo.Fatalf("error loading config from env: %v", err)
+	ko := initFlags()
+	cfg, err := config.LoadConfig(ko.String("config"), ko)
+	if err != nil {
+		logger.Fatalf("Failed to load configuration: %v", err)
 	}
+
+	db, err := initDB(cfg)
+	if err != nil {
+		logger.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer db.Close()
 
 	// Check if the DB schema is installed.
 	if ok, err := checkSchema(db); err != nil {
-		log.Fatalf("error checking schema in DB: %v", err)
+		logger.Fatalf("error checking schema in DB: %v", err)
 	} else if !ok {
-		lo.Fatal("the database does not appear to be setup. Run --install.")
-	}
-}
-
-func main() {
-	// Parse command line flags
-	configFile := flag.String("config", "config/default.yaml", "Path to configuration file")
-	flag.Parse()
-
-	// Load configuration
-	cfg, err := config.Load(*configFile)
-	if err != nil {
-		fmt.Printf("Failed to load configuration: %v\n", err)
-		os.Exit(1)
+		logger.Fatal("the database does not appear to be setup. Run --install.")
 	}
 
-	// Initialize database
-	db, err := initDB(cfg)
-	if err != nil {
-		fmt.Printf("Failed to initialize database: %v\n", err)
-		os.Exit(1)
-	}
-	defer db.Close()
+	// Check if the DB schema is installed.
+	checkInstall(db)
+
+	// Check DB migrations and up-to-date
+	checkUpgrade(db)
 
 	// Create core
 	core, err := core.NewCore(cfg, db)
@@ -190,8 +173,6 @@ func main() {
 		fmt.Printf("Failed to create core: %v\n", err)
 		os.Exit(1)
 	}
-
-	core.Logger.Info("Starting application with configuration from %s", *configFile)
 
 	// Start all servers
 	if err := startServers(core); err != nil {

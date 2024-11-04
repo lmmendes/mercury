@@ -41,9 +41,7 @@ type Config struct {
 	} `koanf:"logging"`
 }
 
-func Load(configFile string) (*Config, error) {
-	k := koanf.New(".")
-
+func LoadConfig(configFile string, ko *koanf.Koanf) (*Config, error) {
 	// Load default configuration
 	defaultConfig := []byte(`
 server:
@@ -67,16 +65,16 @@ logging:
 	format: "json"
 `)
 
-	if err := k.Load(file.Provider(configFile), yaml.Parser()); err != nil {
+	if err := ko.Load(file.Provider(configFile), yaml.Parser()); err != nil {
 		// If config file doesn't exist, use only defaults and environment variables
-		if err := k.Load(file.Provider(string(defaultConfig)), yaml.Parser()); err != nil {
+		if err := ko.Load(file.Provider(string(defaultConfig)), yaml.Parser()); err != nil {
 			return nil, err
 		}
 	}
 
 	// Load environment variables
 	// MERCURY_SERVER_HTTP_PORT, MERCURY_SERVER_SMTP_PORT, etc.
-	if err := k.Load(env.Provider("MERCURY_", ".", func(s string) string {
+	if err := ko.Load(env.Provider("MERCURY_", ".", func(s string) string {
 		return strings.Replace(strings.ToLower(
 			strings.TrimPrefix(s, "MERCURY_")), "_", ".", -1)
 	}), nil); err != nil {
@@ -84,7 +82,7 @@ logging:
 	}
 
 	var config Config
-	if err := k.Unmarshal("", &config); err != nil {
+	if err := ko.Unmarshal("", &config); err != nil {
 		return nil, err
 	}
 

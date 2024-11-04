@@ -3,19 +3,18 @@ package main
 import (
 	"fmt"
 	"log"
+	"mercury/internal/config"
+	"mercury/internal/migrations"
 	"strings"
 
-	"mercury/internal/migrations"
-
 	"github.com/jmoiron/sqlx"
-	"github.com/knadh/koanf/v2"
 	"github.com/lib/pq"
 	"golang.org/x/mod/semver"
 )
 
 type migFunc struct {
 	version string
-	fn      func(*sqlx.DB, *koanf.Koanf, *log.Logger) error
+	fn      func(*sqlx.DB, *config.Config, *log.Logger) error
 }
 
 var migList = []migFunc{
@@ -24,13 +23,13 @@ var migList = []migFunc{
 
 // upgrade upgrades the database to the current version by running SQL migration files
 // for all version from the last known version to the current one.
-func upgrade(db *sqlx.DB, prompt bool) {
+func upgrade(db *sqlx.DB, config *config.Config, prompt bool) {
 	if prompt {
 		var ok string
 		fmt.Printf("** IMPORTANT: Take a backup of the database before upgrading.\n")
 		fmt.Print("continue (y/n)?  ")
 		if _, err := fmt.Scanf("%s", &ok); err != nil {
-			log.Fatalf("error reading value from terminal: %v", err)
+			logger.Fatalf("error reading value from terminal: %v", err)
 		}
 		if strings.ToLower(ok) != "y" {
 			fmt.Println("upgrade cancelled")
@@ -40,28 +39,23 @@ func upgrade(db *sqlx.DB, prompt bool) {
 
 	_, toRun, err := getPendingMigrations(db)
 	if err != nil {
-		log.Fatalf("error checking migrations: %v", err)
+		logger.Fatalf("error checking migrations: %v", err)
 	}
 
 	// No migrations to run.
 	if len(toRun) == 0 {
-		log.Printf("no upgrades to run. Database is up to date.")
+		logger.Printf("no upgrades to run. Database is up to date.")
 		return
 	}
 
 	// Execute migrations in succession.
 	for _, m := range toRun {
 		log.Printf("running migration %s", m.version)
-		if err := m.fn(db, ko, log); err != nil {
+		if err := m.fn(db, config, logger); err != nil {
 			log.Fatalf("error running migration %s: %v", m.version, err)
 		}
 
-		// Record the migration version in the settings table. There was no
-		// settings table until v0.7.0, so ignore the no-table errors.
 		if err := recordMigrationVersion(m.version, db); err != nil {
-			if isTableNotExistErr(err) {
-				continue
-			}
 			log.Fatalf("error recording migration version %s: %v", m.version, err)
 		}
 	}
