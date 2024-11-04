@@ -26,8 +26,8 @@ type Queries struct {
 	GetInbox              *sqlx.Stmt `query:"get-inbox"`
 	UpdateInbox           *sqlx.Stmt `query:"update-inbox"`
 	DeleteInbox           *sqlx.Stmt `query:"delete-inbox"`
-	ListInboxesByAccount  *sqlx.Stmt `query:"list-inboxes-by-account"`
-	CountInboxesByAccount *sqlx.Stmt `query:"count-inboxes-by-account"`
+	ListInboxesByProject  *sqlx.Stmt `query:"list-inboxes-by-project"`
+	CountInboxesByProject *sqlx.Stmt `query:"count-inboxes-by-project"`
 	GetInboxByEmail       *sqlx.Stmt `query:"get-inbox-by-email"`
 
 	// Rule queries

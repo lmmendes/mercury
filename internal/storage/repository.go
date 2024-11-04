@@ -24,7 +24,7 @@ type Repository interface {
 	GetInbox(ctx context.Context, id int) (*models.Inbox, error)
 	UpdateInbox(ctx context.Context, inbox *models.Inbox) error
 	DeleteInbox(ctx context.Context, id int) error
-	ListInboxesByAccount(ctx context.Context, accountID, limit, offset int) ([]*models.Inbox, int, error)
+	ListInboxesByProject(ctx context.Context, projectID, limit, offset int) ([]*models.Inbox, int, error)
 
 	// Rule operations
 	CreateRule(ctx context.Context, rule *models.ForwardRule) error
@@ -82,7 +82,7 @@ func (r *repository) GetProject(ctx context.Context, id int) (*models.Project, e
 	return &project, handleDBError(err)
 }
 
-func (r *repository) UpdateAccount(ctx context.Context, project *models.Project) error {
+func (r *repository) UpdateProject(ctx context.Context, project *models.Project) error {
 	return r.queries.UpdateProject.QueryRowContext(ctx, project.Name, project.ID).
 		Scan(&project.UpdatedAt)
 }
@@ -151,15 +151,15 @@ func (r *repository) DeleteInbox(ctx context.Context, id int) error {
 	return nil
 }
 
-func (r *repository) ListInboxesByAccount(ctx context.Context, accountID, limit, offset int) ([]*models.Inbox, int, error) {
+func (r *repository) ListInboxesByProject(ctx context.Context, projectID, limit, offset int) ([]*models.Inbox, int, error) {
 	var total int
-	err := r.queries.CountInboxesByAccount.GetContext(ctx, &total, accountID)
+	err := r.queries.CountInboxesByProject.GetContext(ctx, &total, projectID)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	var inboxes []*models.Inbox
-	err = r.queries.ListInboxesByAccount.SelectContext(ctx, &inboxes, accountID, limit, offset)
+	err = r.queries.ListInboxesByAccount.SelectContext(ctx, &inboxes, projectID, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}

@@ -14,7 +14,7 @@ func NewInboxService(core *Core) InboxService {
 }
 
 func (s *InboxService) Create(ctx context.Context, inbox *models.Inbox) error {
-	s.core.Logger.Info("Creating new inbox for account %d: %s", inbox.AccountID, inbox.Email)
+	s.core.Logger.Info("Creating new inbox for project %d: %s", inbox.ProjectID, inbox.Email)
 
 	if err := s.core.Repository.CreateInbox(ctx, inbox); err != nil {
 		s.core.Logger.Error("Failed to create inbox: %v", err)
@@ -66,10 +66,10 @@ func (s *InboxService) Delete(ctx context.Context, id int) error {
 	return nil
 }
 
-func (s *InboxService) ListByAccount(ctx context.Context, accountID, limit, offset int) (*models.PaginatedResponse, error) {
-	s.core.Logger.Info("Listing inboxes for account %d with limit: %d and offset: %d", accountID, limit, offset)
+func (s *InboxService) ListByProject(ctx context.Context, projectID, limit, offset int) (*models.PaginatedResponse, error) {
+	s.core.Logger.Info("Listing inboxes for project %d with limit: %d and offset: %d", projectID, limit, offset)
 
-	inboxes, total, err := s.core.Repository.ListInboxesByAccount(ctx, accountID, limit, offset)
+	inboxes, total, err := s.core.Repository.ListInboxesByProject(ctx, projectID, limit, offset)
 	if err != nil {
 		s.core.Logger.Error("Failed to list inboxes: %v", err)
 		return nil, err

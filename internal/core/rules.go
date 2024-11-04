@@ -13,7 +13,7 @@ func NewRuleService(core *Core) RuleService {
 	return RuleService{core: core}
 }
 
-func (s *RuleService) Create(ctx context.Context, rule *models.Rule) error {
+func (s *RuleService) Create(ctx context.Context, rule *models.ForwardRule) error {
 	s.core.Logger.Info("Creating new rule for inbox %d", rule.InboxID)
 
 	if err := s.core.Repository.CreateRule(ctx, rule); err != nil {
@@ -25,7 +25,7 @@ func (s *RuleService) Create(ctx context.Context, rule *models.Rule) error {
 	return nil
 }
 
-func (s *RuleService) Get(ctx context.Context, id int) (*models.Rule, error) {
+func (s *RuleService) Get(ctx context.Context, id int) (*models.ForwardRule, error) {
 	s.core.Logger.Debug("Fetching rule with ID: %d", id)
 
 	rule, err := s.core.Repository.GetRule(ctx, id)
@@ -42,7 +42,7 @@ func (s *RuleService) Get(ctx context.Context, id int) (*models.Rule, error) {
 	return rule, nil
 }
 
-func (s *RuleService) Update(ctx context.Context, rule *models.Rule) error {
+func (s *RuleService) Update(ctx context.Context, rule *models.ForwardRule) error {
 	s.core.Logger.Info("Updating rule with ID: %d", rule.ID)
 
 	if err := s.core.Repository.UpdateRule(ctx, rule); err != nil {
