@@ -4,9 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -17,7 +19,13 @@ import (
 	"mercury/internal/smtp"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/knadh/koanf/providers/env"
 	_ "github.com/lib/pq"
+)
+
+var (
+	db *sqlx.DB
+	lo = log.New(os.Stderr, "", 0)
 )
 
 func initDB(cfg *config.Config) (*sqlx.DB, error) {
@@ -134,6 +142,26 @@ func handleGracefulShutdown(core *core.Core, servers []ServerInstance) error {
 
 	core.Logger.Info("Graceful shutdown completed")
 	return nil
+}
+
+func init() {
+	ko := initFlags()
+	initConfigFiles(ko.Strings("config"), ko)
+
+	// Load environment variables
+	if err := ko.Load(env.Provider("MERCURY_", ".", func(s string) string {
+		return strings.Replace(strings.ToLower(
+			strings.TrimPrefix(s, "MERCURY_")), "__", ".", -1)
+	}), nil); err != nil {
+		lo.Fatalf("error loading config from env: %v", err)
+	}
+
+	// Check if the DB schema is installed.
+	if ok, err := checkSchema(db); err != nil {
+		log.Fatalf("error checking schema in DB: %v", err)
+	} else if !ok {
+		lo.Fatal("the database does not appear to be setup. Run --install.")
+	}
 }
 
 func main() {

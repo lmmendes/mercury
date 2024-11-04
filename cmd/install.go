@@ -27,6 +27,7 @@ func install(db *sqlx.DB, prompt, idempotent bool) {
 	// No migrations to run.
 	if len(toRun) == 0 {
 		return
+	} else {
 	}
 
 	var vers []string
@@ -54,7 +55,7 @@ func install(db *sqlx.DB, prompt, idempotent bool) {
 }
 
 func checkSchema(db *sqlx.DB) (bool, error) {
-	if _, err := db.Exec(`SELECT id FROM migrations LIMIT 1`); err != nil {
+	if _, err := db.Exec(`SELECT version FROM schema_migrations LIMIT 1`); err != nil {
 		if isTableNotExistErr(err) {
 			return false, nil
 		}
