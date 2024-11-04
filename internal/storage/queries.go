@@ -14,12 +14,12 @@ var queriesFS embed.FS
 
 type Queries struct {
 	// Account queries
-	CreateAccount *sqlx.Stmt `query:"create-account"`
-	GetAccount    *sqlx.Stmt `query:"get-account"`
-	UpdateAccount *sqlx.Stmt `query:"update-account"`
-	DeleteAccount *sqlx.Stmt `query:"delete-account"`
-	ListAccounts  *sqlx.Stmt `query:"list-accounts"`
-	CountAccounts *sqlx.Stmt `query:"count-accounts"`
+	CreateProject *sqlx.Stmt `query:"create-project"`
+	GetProject    *sqlx.Stmt `query:"get-project"`
+	UpdateProject *sqlx.Stmt `query:"update-project"`
+	DeleteProject *sqlx.Stmt `query:"delete-project"`
+	ListProjects  *sqlx.Stmt `query:"list-projects"`
+	CountProjects *sqlx.Stmt `query:"count-projects"`
 
 	// Inbox queries
 	CreateInbox           *sqlx.Stmt `query:"create-inbox"`

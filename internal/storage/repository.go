@@ -13,11 +13,11 @@ import (
 
 type Repository interface {
 	// Account operations
-	CreateAccount(ctx context.Context, account *models.Account) error
-	GetAccount(ctx context.Context, id int) (*models.Account, error)
-	UpdateAccount(ctx context.Context, account *models.Account) error
-	DeleteAccount(ctx context.Context, id int) error
-	ListAccounts(ctx context.Context, limit, offset int) ([]*models.Account, int, error)
+	CreateProject(ctx context.Context, account *models.Project) error
+	GetProject(ctx context.Context, id int) (*models.Project, error)
+	UpdateProject(ctx context.Context, account *models.Project) error
+	DeleteProject(ctx context.Context, id int) error
+	ListProjects(ctx context.Context, limit, offset int) ([]*models.Project, int, error)
 
 	// Inbox operations
 	CreateInbox(ctx context.Context, inbox *models.Inbox) error
@@ -27,17 +27,17 @@ type Repository interface {
 	ListInboxesByAccount(ctx context.Context, accountID, limit, offset int) ([]*models.Inbox, int, error)
 
 	// Rule operations
-	CreateRule(ctx context.Context, rule *models.Rule) error
-	GetRule(ctx context.Context, id int) (*models.Rule, error)
-	UpdateRule(ctx context.Context, rule *models.Rule) error
+	CreateRule(ctx context.Context, rule *models.ForwardRule) error
+	GetRule(ctx context.Context, id int) (*models.ForwardRule, error)
+	UpdateRule(ctx context.Context, rule *models.ForwardRule) error
 	DeleteRule(ctx context.Context, id int) error
-	ListRulesByInbox(ctx context.Context, inboxID, limit, offset int) ([]*models.Rule, int, error)
+	ListRulesByInbox(ctx context.Context, inboxID, limit, offset int) ([]*models.ForwardRule, int, error)
 
 	// Message operations
 	CreateMessage(ctx context.Context, message *models.Message) error
 	GetMessage(ctx context.Context, id int) (*models.Message, error)
 	ListMessagesByInbox(ctx context.Context, inboxID, limit, offset int) ([]*models.Message, int, error)
-	ListRules(ctx context.Context, limit, offset int) ([]*models.Rule, int, error)
+	ListRules(ctx context.Context, limit, offset int) ([]*models.ForwardRule, int, error)
 	GetInboxByEmail(ctx context.Context, email string) (*models.Inbox, error)
 
 	// User operations
@@ -71,20 +71,20 @@ func NewRepository(db *sqlx.DB) (Repository, error) {
 	}, nil
 }
 
-func (r *repository) CreateAccount(ctx context.Context, account *models.Account) error {
-	return r.queries.CreateAccount.QueryRowContext(ctx, account.Name).
-		Scan(&account.ID, &account.CreatedAt, &account.UpdatedAt)
+func (r *repository) CreateProject(ctx context.Context, project *models.Project) error {
+	return r.queries.CreateAccount.QueryRowContext(ctx, project.Name).
+		Scan(&project.ID, &project.CreatedAt, &project.UpdatedAt)
 }
 
-func (r *repository) GetAccount(ctx context.Context, id int) (*models.Account, error) {
-	var account models.Account
-	err := r.queries.GetAccount.GetContext(ctx, &account, id)
-	return &account, handleDBError(err)
+func (r *repository) GetProject(ctx context.Context, id int) (*models.Project, error) {
+	var project models.Project
+	err := r.queries.GetProject.GetContext(ctx, &project, id)
+	return &project, handleDBError(err)
 }
 
-func (r *repository) UpdateAccount(ctx context.Context, account *models.Account) error {
-	return r.queries.UpdateAccount.QueryRowContext(ctx, account.Name, account.ID).
-		Scan(&account.UpdatedAt)
+func (r *repository) UpdateAccount(ctx context.Context, project *models.Project) error {
+	return r.queries.UpdateProject.QueryRowContext(ctx, project.Name, project.ID).
+		Scan(&project.UpdatedAt)
 }
 
 func (r *repository) DeleteAccount(ctx context.Context, id int) error {
@@ -95,24 +95,24 @@ func (r *repository) DeleteAccount(ctx context.Context, id int) error {
 	return handleRowsAffected(result)
 }
 
-func (r *repository) ListAccounts(ctx context.Context, limit, offset int) ([]*models.Account, int, error) {
+func (r *repository) ListProjects(ctx context.Context, limit, offset int) ([]*models.Project, int, error) {
 	var total int
-	err := r.queries.CountAccounts.GetContext(ctx, &total)
+	err := r.queries.CountProjects.GetContext(ctx, &total)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	var accounts []*models.Account
-	err = r.queries.ListAccounts.SelectContext(ctx, &accounts, limit, offset)
+	var projects []*models.Project
+	err = r.queries.ListProjects.SelectContext(ctx, &projects, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return accounts, total, nil
+	return projects, total, nil
 }
 
 func (r *repository) CreateInbox(ctx context.Context, inbox *models.Inbox) error {
-	return r.queries.CreateInbox.QueryRowContext(ctx, inbox.AccountID, inbox.Email).
+	return r.queries.CreateInbox.QueryRowContext(ctx, inbox.projectID, inbox.Email).
 		Scan(&inbox.ID, &inbox.CreatedAt, &inbox.UpdatedAt)
 }
 
@@ -167,13 +167,13 @@ func (r *repository) ListInboxesByAccount(ctx context.Context, accountID, limit,
 	return inboxes, total, nil
 }
 
-func (r *repository) CreateRule(ctx context.Context, rule *models.Rule) error {
+func (r *repository) CreateRule(ctx context.Context, rule *models.ForwardRule) error {
 	return r.queries.CreateRule.QueryRowContext(ctx, rule.InboxID, rule.Sender, rule.Receiver, rule.Subject).
 		Scan(&rule.ID, &rule.CreatedAt, &rule.UpdatedAt)
 }
 
-func (r *repository) GetRule(ctx context.Context, id int) (*models.Rule, error) {
-	var rule models.Rule
+func (r *repository) GetRule(ctx context.Context, id int) (*models.ForwardRule, error) {
+	var rule models.ForwardRule
 	err := r.queries.GetRule.GetContext(ctx, &rule, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -184,7 +184,7 @@ func (r *repository) GetRule(ctx context.Context, id int) (*models.Rule, error) 
 	return &rule, nil
 }
 
-func (r *repository) UpdateRule(ctx context.Context, rule *models.Rule) error {
+func (r *repository) UpdateRule(ctx context.Context, rule *models.ForwardRule) error {
 	result, err := r.queries.UpdateRule.ExecContext(ctx, rule.Sender, rule.Receiver, rule.Subject, rule.ID)
 	if err != nil {
 		return err
@@ -214,14 +214,14 @@ func (r *repository) DeleteRule(ctx context.Context, id int) error {
 	return nil
 }
 
-func (r *repository) ListRulesByInbox(ctx context.Context, inboxID, limit, offset int) ([]*models.Rule, int, error) {
+func (r *repository) ListRulesByInbox(ctx context.Context, inboxID, limit, offset int) ([]*models.ForwardRule, int, error) {
 	var total int
 	err := r.queries.CountRulesByInbox.GetContext(ctx, &total, inboxID)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	var rules []*models.Rule
+	var rules []*models.ForwardRule
 	err = r.queries.ListRulesByInbox.SelectContext(ctx, &rules, inboxID, limit, offset)
 	if err != nil {
 		return nil, 0, err
@@ -264,14 +264,14 @@ func (r *repository) ListMessagesByInbox(ctx context.Context, inboxID, limit, of
 	return messages, total, nil
 }
 
-func (r *repository) ListRules(ctx context.Context, limit, offset int) ([]*models.Rule, int, error) {
+func (r *repository) ListRules(ctx context.Context, limit, offset int) ([]*models.ForwardRule, int, error) {
 	var total int
 	err := r.queries.CountRules.GetContext(ctx, &total)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	var rules []*models.Rule
+	var rules []*models.ForwardRule
 	err = r.queries.ListRules.SelectContext(ctx, &rules, limit, offset)
 	if err != nil {
 		return nil, 0, err
@@ -299,7 +299,7 @@ func (r *repository) CreateUser(ctx context.Context, user *models.User) error {
 		user.Password,
 		user.Email,
 		user.Status,
-		user.Kind,
+		user.Role,
 		user.PasswordLogin).
 		Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 }
@@ -323,7 +323,7 @@ func (r *repository) UpdateUser(ctx context.Context, user *models.User) error {
 		user.Password,
 		user.Email,
 		user.Status,
-		user.Kind,
+		user.Role,
 		user.PasswordLogin,
 		user.ID).
 		Scan(&user.UpdatedAt)
