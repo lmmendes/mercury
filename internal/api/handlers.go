@@ -8,26 +8,26 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (s *Server) createAccount(c echo.Context) error {
+func (s *Server) createProject(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	var account models.Account
-	if err := c.Bind(&account); err != nil {
+	var project models.Project
+	if err := c.Bind(&project); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	if err := c.Validate(&account); err != nil {
+	if err := c.Validate(&project); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	if err := s.core.AccountService.Create(ctx, &account); err != nil {
+	if err := s.core.ProjectService.Create(ctx, &project); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 
-	return c.JSON(http.StatusCreated, account)
+	return c.JSON(http.StatusCreated, project)
 }
 
-func (s *Server) getAccounts(c echo.Context) error {
+func (s *Server) getProjects(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	var query models.PaginationQuery
@@ -43,59 +43,59 @@ func (s *Server) getAccounts(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	response, err := s.core.AccountService.List(ctx, query.Limit, query.Offset)
+	response, err := s.core.ProjectService.List(ctx, query.Limit, query.Offset)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	return c.JSON(http.StatusOK, response)
 }
 
-func (s *Server) getAccount(c echo.Context) error {
+func (s *Server) getProjects(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("id"))
-	account, err := s.core.AccountService.Get(c.Request().Context(), id)
+	project, err := s.core.ProjectService.Get(c.Request().Context(), id)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
-	if account == nil {
+	if project == nil {
 		return s.core.HandleError(nil, http.StatusNotFound)
 	}
-	return c.JSON(http.StatusOK, account)
+	return c.JSON(http.StatusOK, project)
 }
 
-func (s *Server) updateAccount(c echo.Context) error {
+func (s *Server) updateProject(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("id"))
-	var account models.Account
-	if err := c.Bind(&account); err != nil {
+	var project models.Project
+	if err := c.Bind(&project); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
-	account.ID = id
+	project.ID = id
 
-	if err := c.Validate(&account); err != nil {
+	if err := c.Validate(&project); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	if err := s.core.AccountService.Update(c.Request().Context(), &account); err != nil {
+	if err := s.core.ProjectService.Update(c.Request().Context(), &project); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 
 	return c.NoContent(http.StatusNoContent)
 }
 
-func (s *Server) deleteAccount(c echo.Context) error {
+func (s *Server) deleteProject(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("id"))
-	if err := s.core.AccountService.Delete(c.Request().Context(), id); err != nil {
+	if err := s.core.ProjectService.Delete(c.Request().Context(), id); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	return c.NoContent(http.StatusNoContent)
 }
 
 func (s *Server) createInbox(c echo.Context) error {
-	accountID, _ := strconv.Atoi(c.Param("accountId"))
+	projectID, _ := strconv.Atoi(c.Param("accountId"))
 	var inbox models.Inbox
 	if err := c.Bind(&inbox); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
-	inbox.AccountID = accountID
+	inbox.ProjectID = projectID
 
 	if err := c.Validate(&inbox); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
@@ -124,7 +124,7 @@ func (s *Server) getInboxes(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	response, err := s.core.InboxService.ListByAccount(c.Request().Context(), accountID, query.Limit, query.Offset)
+	response, err := s.core.InboxService.ListByProject(c.Request().Context(), accountID, query.Limit, query.Offset)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
@@ -145,7 +145,7 @@ func (s *Server) getInbox(c echo.Context) error {
 
 func (s *Server) updateInbox(c echo.Context) error {
 	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
-	accountID, _ := strconv.Atoi(c.Param("accountId"))
+	projectID, _ := strconv.Atoi(c.Param("accountId"))
 
 	var inbox models.Inbox
 	if err := c.Bind(&inbox); err != nil {
@@ -154,7 +154,7 @@ func (s *Server) updateInbox(c echo.Context) error {
 
 	// Set both ID and AccountID before validation
 	inbox.ID = inboxID
-	inbox.AccountID = accountID
+	inbox.ProjectID = projectID
 
 	if err := c.Validate(&inbox); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
@@ -177,7 +177,7 @@ func (s *Server) deleteInbox(c echo.Context) error {
 
 func (s *Server) createRule(c echo.Context) error {
 	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
-	var rule models.Rule
+	var rule models.ForwardRule
 	if err := c.Bind(&rule); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
@@ -233,7 +233,7 @@ func (s *Server) updateRule(c echo.Context) error {
 	ruleID, _ := strconv.Atoi(c.Param("ruleId"))
 	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
 
-	var rule models.Rule
+	var rule models.ForwardRule
 	if err := c.Bind(&rule); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
