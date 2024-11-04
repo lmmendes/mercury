@@ -50,7 +50,7 @@ func (s *Server) getProjects(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (s *Server) getProjects(c echo.Context) error {
+func (s *Server) getProject(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("id"))
 	project, err := s.core.ProjectService.Get(c.Request().Context(), id)
 	if err != nil {

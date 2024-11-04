@@ -24,11 +24,11 @@ func initFlags() *koanf.Koanf {
 	f.Bool("upgrade", false, "upgrade database to the current version")
 
 	if err := f.Parse(os.Args[1:]); err != nil {
-		log.Fatalf("error loading flags: %v", err)
+		logger.Fatalf("error loading flags: %v", err)
 	}
 
 	if err := ko.Load(posflag.Provider(f, ".", ko), nil); err != nil {
-		log.Fatalf("error loading config: %v", err)
+		logger.Fatalf("error loading config: %v", err)
 	}
 
 	return ko

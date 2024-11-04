@@ -159,7 +159,7 @@ func (r *repository) ListInboxesByProject(ctx context.Context, projectID, limit,
 	}
 
 	var inboxes []*models.Inbox
-	err = r.queries.ListInboxesByAccount.SelectContext(ctx, &inboxes, projectID, limit, offset)
+	err = r.queries.ListInboxesByProject.SelectContext(ctx, &inboxes, projectID, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
