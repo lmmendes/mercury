@@ -72,7 +72,7 @@ func NewRepository(db *sqlx.DB) (Repository, error) {
 }
 
 func (r *repository) CreateProject(ctx context.Context, project *models.Project) error {
-	return r.queries.CreateAccount.QueryRowContext(ctx, project.Name).
+	return r.queries.CreateProject.QueryRowContext(ctx, project.Name).
 		Scan(&project.ID, &project.CreatedAt, &project.UpdatedAt)
 }
 
@@ -87,8 +87,8 @@ func (r *repository) UpdateAccount(ctx context.Context, project *models.Project)
 		Scan(&project.UpdatedAt)
 }
 
-func (r *repository) DeleteAccount(ctx context.Context, id int) error {
-	result, err := r.queries.DeleteAccount.ExecContext(ctx, id)
+func (r *repository) DeleteProject(ctx context.Context, id int) error {
+	result, err := r.queries.DeleteProject.ExecContext(ctx, id)
 	if err != nil {
 		return handleDBError(err)
 	}
@@ -112,7 +112,7 @@ func (r *repository) ListProjects(ctx context.Context, limit, offset int) ([]*mo
 }
 
 func (r *repository) CreateInbox(ctx context.Context, inbox *models.Inbox) error {
-	return r.queries.CreateInbox.QueryRowContext(ctx, inbox.projectID, inbox.Email).
+	return r.queries.CreateInbox.QueryRowContext(ctx, inbox.ProjectID, inbox.Email).
 		Scan(&inbox.ID, &inbox.CreatedAt, &inbox.UpdatedAt)
 }
 
