@@ -1,66 +1,53 @@
 package core
 
 import (
-	"fmt"
-	"mercury/internal/logger"
+	"context"
 	"mercury/internal/models"
-	"mercury/internal/storage"
 )
 
-type MessageService interface {
-	Store(message *models.Message) error
-	ListByInbox(inboxID, limit, offset int) (*models.PaginatedResponse, error)
-}
-
-type messageService struct {
-	repo   storage.Repository
-	logger *logger.Logger
+type MessageService struct {
+	core *Core
 }
 
 func NewMessageService(core *Core) MessageService {
-	return &messageService{
-		repo:   core.Repository,
-		logger: core.Logger,
-	}
+	return MessageService{core: core}
 }
 
-func (s *messageService) Store(message *models.Message) error {
-	// First try to match against rules
-	rules, _, err := s.repo.ListRules(1000, 0)
-	if err != nil {
-		s.logger.Error("Error querying rules: %v", err)
+func (s *MessageService) Store(ctx context.Context, message *models.Message) error {
+	s.core.Logger.Info("Storing new message for inbox %d from %s", message.InboxID, message.Sender)
+
+	if err := s.core.Repository.CreateMessage(ctx, message); err != nil {
+		s.core.Logger.Error("Failed to store message: %v", err)
 		return err
 	}
 
-	for _, rule := range rules {
-		if rule.Sender == message.Sender && rule.Receiver == message.Receiver && rule.Subject == message.Subject {
-			message.InboxID = rule.InboxID
-			s.logger.Debug("Message matched rule for inbox %d", rule.InboxID)
-			return s.repo.CreateMessage(message)
-		}
-	}
-
-	// If no rule matches, store in the inbox with the matching email address
-	inbox, err := s.repo.GetInboxByEmail(message.Receiver)
-	if err != nil {
-		s.logger.Error("Error finding inbox for email %s: %v", message.Receiver, err)
-		return err
-	}
-
-	if inbox == nil {
-		s.logger.Error("No inbox found for email %s", message.Receiver)
-		return fmt.Errorf("no inbox found for email address: %s", message.Receiver)
-	}
-
-	message.InboxID = inbox.ID
-	s.logger.Info("Storing message in inbox %d", inbox.ID)
-	return s.repo.CreateMessage(message)
+	s.core.Logger.Info("Successfully stored message with ID: %d", message.ID)
+	return nil
 }
 
-func (s *messageService) ListByInbox(inboxID, limit, offset int) (*models.PaginatedResponse, error) {
-	messages, total, err := s.repo.ListMessagesByInbox(inboxID, limit, offset)
+func (s *MessageService) Get(ctx context.Context, id int) (*models.Message, error) {
+	s.core.Logger.Debug("Fetching message with ID: %d", id)
+
+	message, err := s.core.Repository.GetMessage(ctx, id)
 	if err != nil {
-		s.logger.Error("Failed to list messages for inbox %d: %v", inboxID, err)
+		s.core.Logger.Error("Failed to fetch message: %v", err)
+		return nil, err
+	}
+
+	if message == nil {
+		s.core.Logger.Info("Message not found with ID: %d", id)
+		return nil, ErrNotFound
+	}
+
+	return message, nil
+}
+
+func (s *MessageService) ListByInbox(ctx context.Context, inboxID, limit, offset int) (*models.PaginatedResponse, error) {
+	s.core.Logger.Info("Listing messages for inbox %d with limit: %d and offset: %d", inboxID, limit, offset)
+
+	messages, total, err := s.core.Repository.ListMessagesByInbox(ctx, inboxID, limit, offset)
+	if err != nil {
+		s.core.Logger.Error("Failed to list messages: %v", err)
 		return nil, err
 	}
 
@@ -71,6 +58,6 @@ func (s *messageService) ListByInbox(inboxID, limit, offset int) (*models.Pagina
 	response.Pagination.Limit = limit
 	response.Pagination.Offset = offset
 
-	s.logger.Debug("Retrieved %d messages for inbox %d (total: %d)", len(messages), inboxID, total)
+	s.core.Logger.Info("Successfully retrieved %d messages (total: %d)", len(messages), total)
 	return response, nil
 }

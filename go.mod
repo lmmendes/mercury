@@ -10,6 +10,7 @@ require (
 	github.com/emersion/go-smtp v0.21.3
 	github.com/go-playground/validator/v10 v10.22.1
 	github.com/jmoiron/sqlx v1.4.0
+	github.com/knadh/goyesql/v2 v2.2.0
 	github.com/knadh/koanf/parsers/yaml v0.1.0
 	github.com/knadh/koanf/providers/env v1.0.0
 	github.com/knadh/koanf/providers/file v1.1.2
@@ -17,6 +18,7 @@ require (
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/lib/pq v1.10.9
 	github.com/volatiletech/null/v9 v9.0.0
+	golang.org/x/net v0.30.0
 )
 
 require (
@@ -38,7 +40,6 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	golang.org/x/crypto v0.28.0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
-	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/time v0.7.0 // indirect

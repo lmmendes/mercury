@@ -1,6 +1,9 @@
 package core
 
 import (
+	"context"
+	"fmt"
+	"mercury/internal/config"
 	"mercury/internal/logger"
 	"mercury/internal/models"
 	"mercury/internal/storage"
@@ -10,16 +13,8 @@ import (
 	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
-type Config struct {
-	SMTPPort    string
-	HTTPPort    string
-	IMAPPort    string
-	DatabaseURL string
-	LogLevel    logger.Level
-}
-
 type Core struct {
-	Config     *Config
+	Config     *config.Config
 	Logger     *logger.Logger
 	Repository storage.Repository
 
@@ -29,13 +24,18 @@ type Core struct {
 	MessageService MessageService
 }
 
-func NewCore(config *Config, db *sqlx.DB) *Core {
-	logger := logger.New(os.Stdout, config.LogLevel)
+func NewCore(cfg *config.Config, db *sqlx.DB) (*Core, error) {
+	baseLogger := logger.New(os.Stdout, cfg.Logging.Level)
+
+	repo, err := storage.NewRepository(db)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create repository: %w", err)
+	}
 
 	core := &Core{
-		Config:     config,
-		Logger:     logger,
-		Repository: storage.NewRepository(db),
+		Config:     cfg,
+		Logger:     baseLogger,
+		Repository: repo,
 	}
 
 	core.AccountService = NewAccountService(core)
@@ -43,19 +43,10 @@ func NewCore(config *Config, db *sqlx.DB) *Core {
 	core.RuleService = NewRuleService(core)
 	core.MessageService = NewMessageService(core)
 
-	return core
-}
-
-func LoadConfig() *Config {
-	return &Config{
-		SMTPPort:    ":1025",
-		HTTPPort:    ":8080",
-		IMAPPort:    ":1143",
-		DatabaseURL: "./database.sqlite3",
-		LogLevel:    logger.INFO,
-	}
+	return core, nil
 }
 
 func (c *Core) StoreMessage(message *models.Message) error {
-	return c.MessageService.Store(message)
+	ctx := context.Background()
+	return c.MessageService.Store(ctx, message)
 }

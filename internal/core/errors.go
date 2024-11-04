@@ -1,7 +1,9 @@
 package core
 
 import (
+	"errors"
 	"fmt"
+	"mercury/internal/storage"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -30,6 +32,11 @@ var (
 		Code:    http.StatusNotFound,
 		Message: "resource not found",
 	}
+
+	ErrBadRequest = &APIError{
+		Code:    http.StatusBadRequest,
+		Message: "bad request",
+	}
 )
 
 func (c *Core) HandleError(err error, code int) error {
@@ -40,6 +47,14 @@ func (c *Core) HandleError(err error, code int) error {
 		}
 		// For other nil error cases, just return nil
 		return nil
+	}
+
+	// Handle specific storage errors
+	switch {
+	case errors.Is(err, storage.ErrNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, ErrNotFound)
+	case errors.Is(err, storage.ErrNoRowsAffected):
+		return echo.NewHTTPError(http.StatusNotFound, ErrNotFound)
 	}
 
 	if code >= 500 {

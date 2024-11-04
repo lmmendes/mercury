@@ -1,72 +1,77 @@
 package core
 
 import (
-	"mercury/internal/logger"
+	"context"
 	"mercury/internal/models"
-	"mercury/internal/storage"
 )
 
-type InboxService interface {
-	Create(inbox *models.Inbox) error
-	Get(id int) (*models.Inbox, error)
-	Update(inbox *models.Inbox) error
-	Delete(id int) error
-	ListByAccount(accountID, limit, offset int) (*models.PaginatedResponse, error)
-}
-
-type inboxService struct {
-	repo   storage.Repository
-	logger *logger.Logger
+type InboxService struct {
+	core *Core
 }
 
 func NewInboxService(core *Core) InboxService {
-	return &inboxService{
-		repo:   core.Repository,
-		logger: core.Logger,
-	}
+	return InboxService{core: core}
 }
 
-func (s *inboxService) Create(inbox *models.Inbox) error {
-	if err := s.repo.CreateInbox(inbox); err != nil {
-		s.logger.Error("Failed to create inbox: %v", err)
+func (s *InboxService) Create(ctx context.Context, inbox *models.Inbox) error {
+	s.core.Logger.Info("Creating new inbox for account %d: %s", inbox.AccountID, inbox.Email)
+
+	if err := s.core.Repository.CreateInbox(ctx, inbox); err != nil {
+		s.core.Logger.Error("Failed to create inbox: %v", err)
 		return err
 	}
-	s.logger.Info("Created inbox %d for account %d", inbox.ID, inbox.AccountID)
+
+	s.core.Logger.Info("Successfully created inbox with ID: %d", inbox.ID)
 	return nil
 }
 
-func (s *inboxService) Get(id int) (*models.Inbox, error) {
-	inbox, err := s.repo.GetInbox(id)
+func (s *InboxService) Get(ctx context.Context, id int) (*models.Inbox, error) {
+	s.core.Logger.Debug("Fetching inbox with ID: %d", id)
+
+	inbox, err := s.core.Repository.GetInbox(ctx, id)
 	if err != nil {
-		s.logger.Error("Failed to get inbox %d: %v", id, err)
+		s.core.Logger.Error("Failed to fetch inbox: %v", err)
 		return nil, err
 	}
-	s.logger.Debug("Retrieved inbox: %d", id)
+
+	if inbox == nil {
+		s.core.Logger.Info("Inbox not found with ID: %d", id)
+		return nil, ErrNotFound
+	}
+
 	return inbox, nil
 }
 
-func (s *inboxService) Update(inbox *models.Inbox) error {
-	if err := s.repo.UpdateInbox(inbox); err != nil {
-		s.logger.Error("Failed to update inbox %d: %v", inbox.ID, err)
+func (s *InboxService) Update(ctx context.Context, inbox *models.Inbox) error {
+	s.core.Logger.Info("Updating inbox with ID: %d", inbox.ID)
+
+	if err := s.core.Repository.UpdateInbox(ctx, inbox); err != nil {
+		s.core.Logger.Error("Failed to update inbox: %v", err)
 		return err
 	}
-	s.logger.Info("Updated inbox: %d", inbox.ID)
+
+	s.core.Logger.Info("Successfully updated inbox with ID: %d", inbox.ID)
 	return nil
 }
 
-func (s *inboxService) Delete(id int) error {
-	if err := s.repo.DeleteInbox(id); err != nil {
-		s.logger.Error("Failed to delete inbox %d: %v", id, err)
+func (s *InboxService) Delete(ctx context.Context, id int) error {
+	s.core.Logger.Info("Deleting inbox with ID: %d", id)
+
+	if err := s.core.Repository.DeleteInbox(ctx, id); err != nil {
+		s.core.Logger.Error("Failed to delete inbox: %v", err)
 		return err
 	}
-	s.logger.Info("Deleted inbox: %d", id)
+
+	s.core.Logger.Info("Successfully deleted inbox with ID: %d", id)
 	return nil
 }
 
-func (s *inboxService) ListByAccount(accountID, limit, offset int) (*models.PaginatedResponse, error) {
-	inboxes, total, err := s.repo.ListInboxesByAccount(accountID, limit, offset)
+func (s *InboxService) ListByAccount(ctx context.Context, accountID, limit, offset int) (*models.PaginatedResponse, error) {
+	s.core.Logger.Info("Listing inboxes for account %d with limit: %d and offset: %d", accountID, limit, offset)
+
+	inboxes, total, err := s.core.Repository.ListInboxesByAccount(ctx, accountID, limit, offset)
 	if err != nil {
-		s.logger.Error("Failed to list inboxes for account %d: %v", accountID, err)
+		s.core.Logger.Error("Failed to list inboxes: %v", err)
 		return nil, err
 	}
 
@@ -77,6 +82,6 @@ func (s *inboxService) ListByAccount(accountID, limit, offset int) (*models.Pagi
 	response.Pagination.Limit = limit
 	response.Pagination.Offset = offset
 
-	s.logger.Debug("Retrieved %d inboxes for account %d (total: %d)", len(inboxes), accountID, total)
+	s.core.Logger.Info("Successfully retrieved %d inboxes (total: %d)", len(inboxes), total)
 	return response, nil
 }
