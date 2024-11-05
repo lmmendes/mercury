@@ -56,14 +56,13 @@ func NewServer(core *core.Core) *Server {
 	api := e.Group("/api")
 	s.routes(api)
 
-	// Serve frontend assets with custom handler for debugging
+	// Serve frontend assets
 	e.GET("/*", func(c echo.Context) error {
 		path := c.Param("*")
 		if path == "" || path == "/" {
 			path = "index.html"
 		}
 
-		// Remove leading slash if present
 		if path[0] == '/' {
 			path = path[1:]
 		}
