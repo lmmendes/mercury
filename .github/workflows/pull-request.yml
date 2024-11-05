@@ -52,6 +52,10 @@ jobs:
   frontend:
     name: Frontend Checks
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: frontend
 
     steps:
       - name: Checkout code
@@ -68,9 +72,11 @@ jobs:
         with:
           node-version: '20'
           cache: 'pnpm'
+          cache-dependency-path: 'frontend/pnpm-lock.yaml'
 
       - name: Install frontend dependencies
-        run: cd frontend && pnpm install
+        run: pnpm install
 
       - name: Build frontend
+        working-directory: .
         run: make build-frontend
