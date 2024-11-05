@@ -1,13 +1,17 @@
 <script>
+import HelloWorld from './components/HelloWorld.vue'
+
 export default {
-  name: 'App'
+  name: 'App',
+  components: {
+    HelloWorld
+  }
 }
 </script>
 
 <template>
   <div>
-    <h1>Inbox451</h1>
-    <p>Where test emails go up in flames 🔥</p>
+    <HelloWorld msg="Inbox451" />
   </div>
 </template>
 
