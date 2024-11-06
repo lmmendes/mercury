@@ -1,5 +1,5 @@
--- name: create-account
-INSERT INTO accounts (name, created_at, updated_at)
+-- name: create-project
+INSERT INTO projects (name, created_at, updated_at)
 VALUES ($1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 RETURNING id, created_at, updated_at;
 
@@ -27,12 +27,12 @@ LIMIT $1 OFFSET $2;
 SELECT COUNT(*) FROM projects;
 
 -- name: create-inbox
-INSERT INTO inboxes (account_id, email, created_at, updated_at)
+INSERT INTO inboxes (project_id, email, created_at, updated_at)
 VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 RETURNING id, created_at, updated_at;
 
 -- name: get-inbox
-SELECT id, account_id, email, created_at, updated_at
+SELECT id, project_id, email, created_at, updated_at
 FROM inboxes
 WHERE id = $1;
 
@@ -62,43 +62,43 @@ FROM inboxes
 WHERE email = $1;
 
 -- name: create-rule
-INSERT INTO forwarding_rules (inbox_id, sender, receiver, subject, created_at, updated_at)
+INSERT INTO forward_rules (inbox_id, sender, receiver, subject, created_at, updated_at)
 VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 RETURNING id, created_at, updated_at;
 
 -- name: get-rule
 SELECT id, inbox_id, sender, receiver, subject, created_at, updated_at
-FROM forwarding_rules
+FROM forward_rules
 WHERE id = $1;
 
 -- name: update-rule
-UPDATE forwarding_rules
+UPDATE forward_rules
 SET sender = $1, receiver = $2, subject = $3
 WHERE id = $4;
 
 -- name: delete-rule
-DELETE FROM forwarding_rules WHERE id = $1;
+DELETE FROM forward_rules WHERE id = $1;
 
 -- name: list-rules-by-inbox
 SELECT id, inbox_id, sender, receiver, subject, created_at, updated_at
-FROM forwarding_rules
+FROM forward_rules
 WHERE inbox_id = $1
 ORDER BY id
 LIMIT $2 OFFSET $3;
 
 -- name: count-rules-by-inbox
 SELECT COUNT(*)
-FROM forwarding_rules
+FROM forward_rules
 WHERE inbox_id = $1;
 
 -- name: list-rules
 SELECT id, inbox_id, sender, receiver, subject, created_at, updated_at
-FROM forwarding_rules
+FROM forward_rules
 ORDER BY id
 LIMIT $1 OFFSET $2;
 
 -- name: count-rules
-SELECT COUNT(*) FROM forwarding_rules;
+SELECT COUNT(*) FROM forward_rules;
 
 -- name: create-message
 INSERT INTO messages (inbox_id, sender, receiver, subject, body, created_at, updated_at)
@@ -124,13 +124,13 @@ WHERE inbox_id = $1;
 
 -- name: create-user
 INSERT INTO users (
-    name, username, password, email, status, kind,
+    name, username, password, email, status, role,
     password_login, created_at, updated_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 RETURNING id, created_at, updated_at;
 
 -- name: get-user
-SELECT id, name, username, password, email, status, kind,
+SELECT id, name, username, password, email, status, role,
        password_login, loggedin_at, created_at, updated_at
 FROM users
 WHERE id = $1;
@@ -138,7 +138,7 @@ WHERE id = $1;
 -- name: update-user
 UPDATE users
 SET name = $1, username = $2, password = $3, email = $4,
-    status = $5, kind = $6, password_login = $7,
+    status = $5, role = $6, password_login = $7,
     updated_at = CURRENT_TIMESTAMP
 WHERE id = $8
 RETURNING updated_at;
@@ -147,7 +147,7 @@ RETURNING updated_at;
 DELETE FROM users WHERE id = $1;
 
 -- name: get-user-by-username
-SELECT id, name, username, password, email, status, kind,
+SELECT id, name, username, password, email, status, role,
        password_login, loggedin_at, created_at, updated_at
 FROM users
 WHERE username = $1;

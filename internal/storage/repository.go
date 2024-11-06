@@ -54,11 +54,6 @@ type repository struct {
 }
 
 func NewRepository(db *sqlx.DB) (Repository, error) {
-	// First initialize tables
-	if err := initializeTables(db); err != nil {
-		return nil, fmt.Errorf("failed to initialize tables: %w", err)
-	}
-
 	// Then prepare queries
 	queries, err := PrepareQueries(db)
 	if err != nil {
@@ -353,41 +348,5 @@ func (r *repository) DeleteUser(ctx context.Context, id int) error {
 	if rows == 0 {
 		return errors.New("user not found")
 	}
-	return nil
-}
-
-// Update the initializeTables function
-func initializeTables(db *sqlx.DB) error {
-	// Read the schema file
-	schemaBytes, err := queriesFS.ReadFile("schema.sql")
-
-	if err != nil {
-		return fmt.Errorf("failed to read schema file: %w", err)
-	}
-
-	// Start a transaction
-	tx, err := db.Beginx()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-
-	// Ensure proper rollback handling
-	defer func() {
-		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
-			// We can only log this error since we can't return it
-			fmt.Printf("failed to rollback transaction: %v\n", err)
-		}
-	}()
-
-	// Execute the schema
-	if _, err := tx.Exec(string(schemaBytes)); err != nil {
-		return fmt.Errorf("failed to execute schema: %w", err)
-	}
-
-	// Commit the transaction
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
 	return nil
 }

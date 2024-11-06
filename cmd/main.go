@@ -17,7 +17,10 @@ import (
 	"mercury/internal/smtp"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/knadh/koanf/providers/posflag"
+	"github.com/knadh/koanf/v2"
 	_ "github.com/lib/pq"
+	"github.com/spf13/pflag"
 )
 
 var (
@@ -34,8 +37,7 @@ func initDB(cfg *config.Config) (*sqlx.DB, error) {
 		if err == nil {
 			break
 		}
-		fmt.Printf("Failed to connect to database: %v\n", err)
-		fmt.Printf("Retrying in 2 seconds... (%d/%d)\n", i+1, maxRetries)
+		fmt.Printf("Failed to connect to database. Retrying in 2 seconds... (%d/%d)\n", i+1, maxRetries)
 		time.Sleep(2 * time.Second)
 	}
 	if err != nil {
@@ -141,6 +143,33 @@ func handleGracefulShutdown(core *core.Core, servers []ServerInstance) error {
 	return nil
 }
 
+func initFlags() *koanf.Koanf {
+	ko := koanf.New(".")
+
+	f := pflag.NewFlagSet("config", pflag.ContinueOnError)
+
+	f.Usage = func() {
+		fmt.Println(f.FlagUsages())
+		os.Exit(0)
+	}
+
+	f.String("config", "config.yml", "path to the config file")
+	f.Bool("idempotent", false, "make --install run only if the database isn't already setup")
+	f.Bool("install", false, "setup database (first time)")
+	f.Bool("upgrade", false, "upgrade database to the current version")
+	f.Bool("yes", false, "assume 'yes' to prompts during --install/upgrade")
+
+	if err := f.Parse(os.Args[1:]); err != nil {
+		logger.Fatalf("error loading flags: %v", err)
+	}
+
+	if err := ko.Load(posflag.Provider(f, ".", ko), nil); err != nil {
+		logger.Fatalf("error loading config: %v", err)
+	}
+
+	return ko
+}
+
 func main() {
 
 	ko := initFlags()
@@ -148,8 +177,6 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Failed to load configuration: %v", err)
 	}
-
-	fmt.Printf("config=%v", cfg)
 
 	db, err := initDB(cfg)
 	if err != nil {

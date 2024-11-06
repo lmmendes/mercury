@@ -114,13 +114,13 @@ func V0_1_0(db *sqlx.DB, config *config.Config, log *log.Logger) error {
 	// Execute the schema
 	for _, query := range schema {
 		if _, err := tx.Exec(query); err != nil {
-			return fmt.Errorf("failed to execute schema: %w", err)
+			return fmt.Errorf("Failed to execute schema: %w", err)
 		}
 	}
 
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
+		return fmt.Errorf("Failed to commit transaction: %w", err)
 	}
 
 	return nil
