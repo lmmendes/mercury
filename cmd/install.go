@@ -13,17 +13,17 @@ func install(db *sqlx.DB, config *config.Config, prompt, idempotent bool) {
 	// If the database is not initialized, we should get "v0.0.0" as the version.
 	version, err := getLastMigrationVersion(db)
 	if err != nil {
-		logger.Fatalf("error getting last migration version: %v", err)
+		logger.Fatalf("Error getting last migration version: %v", err)
 	}
 
 	if version != "v0.0.0" {
-		logger.Fatalf("database is already initialized. Current version is %s", version)
+		logger.Fatalf("Database is already initialized. Current version is %s", version)
 	}
 
 	// Fetch all available migrations and run them.
 	_, toRun, err := getPendingMigrations(db)
 	if err != nil {
-		logger.Fatalf("error checking migrations: %v", err)
+		logger.Fatalf("Error checking migrations: %v", err)
 	}
 
 	// No migrations to run.
@@ -37,15 +37,14 @@ func install(db *sqlx.DB, config *config.Config, prompt, idempotent bool) {
 		vers = append(vers, m.version)
 	}
 
-	// Execute migrations in succession.
 	for _, m := range toRun {
-		log.Printf("running migration %s", m.version)
+		log.Printf("Running migration %s", m.version)
 		if err := m.fn(db, config, logger); err != nil {
-			log.Fatalf("error running migration %s: %v", m.version, err)
+			log.Fatalf("Error running migration %s: %v", m.version, err)
 		}
 
 		if err := recordMigrationVersion(m.version, db); err != nil {
-			log.Fatalf("error recording migration version %s: %v", m.version, err)
+			log.Fatalf("Error recording migration version %s: %v", m.version, err)
 		}
 	}
 
@@ -62,16 +61,14 @@ func checkSchema(db *sqlx.DB) (bool, error) {
 }
 
 func checkInstall(db *sqlx.DB) {
-	// Check if the DB schema is installed.
 	if ok, err := checkSchema(db); err != nil {
 		logger.Fatalf("error checking schema in DB: %v", err)
 	} else if !ok {
-		logger.Fatal("the database does not appear to be setup. Run --install.")
+		logger.Fatal("The database does not appear to be setup. Run --install.")
 	}
 }
 
 func recordMigrationVersion(version string, db *sqlx.DB) error {
-	_, err := db.Exec(fmt.Sprintf(`INSERT INTO schema_migrations (version)
-	VALUES('%s')`, version))
+	_, err := db.Exec(fmt.Sprintf(`INSERT INTO schema_migrations (version) VALUES('%s')`, version))
 	return err
 }

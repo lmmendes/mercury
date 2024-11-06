@@ -21,8 +21,6 @@ var migList = []migFunc{
 	{"v0.1.0", migrations.V0_1_0},
 }
 
-// upgrade upgrades the database to the current version by running SQL migration files
-// for all version from the last known version to the current one.
 func upgrade(db *sqlx.DB, config *config.Config, prompt bool) {
 	if prompt {
 		var ok string
@@ -42,13 +40,11 @@ func upgrade(db *sqlx.DB, config *config.Config, prompt bool) {
 		logger.Fatalf("error checking migrations: %v", err)
 	}
 
-	// No migrations to run.
 	if len(toRun) == 0 {
 		logger.Printf("no upgrades to run. Database is up to date.")
 		return
 	}
 
-	// Execute migrations in succession.
 	for _, m := range toRun {
 		log.Printf("running migration %s", m.version)
 		if err := m.fn(db, config, logger); err != nil {
@@ -69,7 +65,6 @@ func checkUpgrade(db *sqlx.DB) {
 		log.Fatalf("error checking migrations: %v", err)
 	}
 
-	// No migrations to run.
 	if len(toRun) == 0 {
 		return
 	}
@@ -89,8 +84,6 @@ func getPendingMigrations(db *sqlx.DB) (string, []migFunc, error) {
 		return "", nil, err
 	}
 
-	// Iterate through the migration versions and get everything above the last
-	// upgraded semver.
 	var toRun []migFunc
 	for i, m := range migList {
 		if semver.Compare(m.version, lastVer) > 0 {
@@ -122,7 +115,6 @@ func getLastMigrationVersion(db *sqlx.DB) (string, error) {
 // "table does not exist" error.
 func isTableNotExistErr(err error) bool {
 	if p, ok := err.(*pq.Error); ok {
-		// `settings` table does not exist. It was introduced in v0.7.0.
 		if p.Code == "42P01" {
 			return true
 		}
