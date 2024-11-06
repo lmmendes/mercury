@@ -1,6 +1,8 @@
 package migrations
 
 import (
+	"database/sql"
+	"fmt"
 	"log"
 	"mercury/internal/config"
 
@@ -9,5 +11,117 @@ import (
 
 func V0_1_0(db *sqlx.DB, config *config.Config, log *log.Logger) error {
 	log.Print("Running migration v0.1.0")
+	var schema = []string{
+		`CREATE TABLE IF NOT EXISTS schema_migrations (
+			version VARCHAR(255) PRIMARY KEY
+		)`,
+
+		`DO $$
+		BEGIN
+			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+				CREATE TYPE user_role AS ENUM ('user', 'admin');
+			END IF;
+			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'project_role') THEN
+				CREATE TYPE project_role AS ENUM ('user', 'admin');
+			END IF;
+		END
+		$$`,
+
+		`CREATE TABLE IF NOT EXISTS projects (
+			id SERIAL PRIMARY KEY,
+			name VARCHAR(100) NOT NULL CHECK (LENGTH(name) >= 2),
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		)`,
+
+		`CREATE TABLE IF NOT EXISTS users (
+			id SERIAL PRIMARY KEY,
+			name VARCHAR(255) NOT NULL,
+			username VARCHAR(255) NOT NULL UNIQUE,
+			password VARCHAR(255) NOT NULL,
+			email VARCHAR(255) NOT NULL UNIQUE,
+			status VARCHAR(50) NOT NULL,
+			role user_role NOT NULL DEFAULT 'user',
+			password_login BOOLEAN NOT NULL DEFAULT true,
+			loggedin_at TIMESTAMP WITH TIME ZONE,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		)`,
+
+		`CREATE TABLE IF NOT EXISTS project_users (
+			id SERIAL PRIMARY KEY,
+			project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+			user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			role project_role NOT NULL DEFAULT 'user',
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(project_id, user_id)
+		)`,
+
+		`CREATE TABLE IF NOT EXISTS inboxes (
+			id SERIAL PRIMARY KEY,
+			project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+			email VARCHAR(255) NOT NULL UNIQUE,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		)`,
+
+		`CREATE TABLE IF NOT EXISTS user_tokens (
+			id SERIAL PRIMARY KEY,
+			user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			token VARCHAR(255) NOT NULL UNIQUE,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		)`,
+
+		`CREATE TABLE IF NOT EXISTS forward_rules (
+			id SERIAL PRIMARY KEY,
+			inbox_id INTEGER NOT NULL REFERENCES inboxes(id) ON DELETE CASCADE,
+			sender VARCHAR(255),
+			receiver VARCHAR(255),
+			subject VARCHAR(200),
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			CHECK (sender IS NOT NULL OR receiver IS NOT NULL OR subject IS NOT NULL)
+		)`,
+
+		`CREATE TABLE IF NOT EXISTS messages (
+			id SERIAL PRIMARY KEY,
+			inbox_id INTEGER NOT NULL REFERENCES inboxes(id) ON DELETE CASCADE,
+			sender VARCHAR(255) NOT NULL,
+			receiver VARCHAR(255) NOT NULL,
+			subject VARCHAR(200) NOT NULL,
+			body TEXT NOT NULL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		)`,
+	}
+
+	// Start a transaction
+	tx, err := db.Beginx()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	// Ensure proper rollback handling
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			// We can only log this error since we can't return it
+			fmt.Printf("failed to rollback transaction: %v\n", err)
+		}
+	}()
+
+	// Execute the schema
+	for _, query := range schema {
+		if _, err := tx.Exec(query); err != nil {
+			return fmt.Errorf("failed to execute schema: %w", err)
+		}
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
 	return nil
 }
