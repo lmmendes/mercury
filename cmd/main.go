@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,7 +17,14 @@ import (
 	"mercury/internal/smtp"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/knadh/koanf/providers/posflag"
+	"github.com/knadh/koanf/v2"
 	_ "github.com/lib/pq"
+	"github.com/spf13/pflag"
+)
+
+var (
+	logger = log.New(os.Stderr, "", 0)
 )
 
 func initDB(cfg *config.Config) (*sqlx.DB, error) {
@@ -30,7 +37,7 @@ func initDB(cfg *config.Config) (*sqlx.DB, error) {
 		if err == nil {
 			break
 		}
-		fmt.Printf("Failed to connect to database, retrying in 2 seconds... (%d/%d)\n", i+1, maxRetries)
+		fmt.Printf("Failed to connect to database. Retrying in 2 seconds... (%d/%d)\n", i+1, maxRetries)
 		time.Sleep(2 * time.Second)
 	}
 	if err != nil {
@@ -136,25 +143,62 @@ func handleGracefulShutdown(core *core.Core, servers []ServerInstance) error {
 	return nil
 }
 
-func main() {
-	// Parse command line flags
-	configFile := flag.String("config", "config/default.yaml", "Path to configuration file")
-	flag.Parse()
+func initFlags() *koanf.Koanf {
+	ko := koanf.New(".")
 
-	// Load configuration
-	cfg, err := config.Load(*configFile)
-	if err != nil {
-		fmt.Printf("Failed to load configuration: %v\n", err)
-		os.Exit(1)
+	f := pflag.NewFlagSet("config", pflag.ContinueOnError)
+
+	f.Usage = func() {
+		fmt.Println(f.FlagUsages())
+		os.Exit(0)
 	}
 
-	// Initialize database
+	f.String("config", "config.yml", "path to the config file")
+	f.Bool("idempotent", false, "make --install run only if the database isn't already setup")
+	f.Bool("install", false, "setup database (first time)")
+	f.Bool("upgrade", false, "upgrade database to the current version")
+	f.Bool("yes", false, "assume 'yes' to prompts during --install/upgrade")
+
+	if err := f.Parse(os.Args[1:]); err != nil {
+		logger.Fatalf("error loading flags: %v", err)
+	}
+
+	if err := ko.Load(posflag.Provider(f, ".", ko), nil); err != nil {
+		logger.Fatalf("error loading config: %v", err)
+	}
+
+	return ko
+}
+
+func main() {
+
+	ko := initFlags()
+	cfg, err := config.LoadConfig(ko.String("config"), ko)
+	if err != nil {
+		logger.Fatalf("Failed to load configuration: %v", err)
+	}
+
 	db, err := initDB(cfg)
 	if err != nil {
-		fmt.Printf("Failed to initialize database: %v\n", err)
-		os.Exit(1)
+		logger.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer db.Close()
+
+	if ko.Bool("install") {
+		install(db, cfg, !ko.Bool("yes"), ko.Bool("idempotent"))
+		os.Exit(0)
+	}
+
+	// Check if the DB schema is installed.
+	checkInstall(db)
+
+	if ko.Bool("upgrade") {
+		upgrade(db, cfg, !ko.Bool("yes"))
+		os.Exit(0)
+	}
+
+	// Check DB migrations and up-to-date
+	checkUpgrade(db)
 
 	// Create core
 	core, err := core.NewCore(cfg, db)
@@ -162,8 +206,6 @@ func main() {
 		fmt.Printf("Failed to create core: %v\n", err)
 		os.Exit(1)
 	}
-
-	core.Logger.Info("Starting application with configuration from %s", *configFile)
 
 	// Start all servers
 	if err := startServers(core); err != nil {

@@ -9,25 +9,25 @@ import (
 	goyesqlx "github.com/knadh/goyesql/v2/sqlx"
 )
 
-//go:embed queries.sql schema.sql
+//go:embed queries.sql
 var queriesFS embed.FS
 
 type Queries struct {
 	// Account queries
-	CreateAccount *sqlx.Stmt `query:"create-account"`
-	GetAccount    *sqlx.Stmt `query:"get-account"`
-	UpdateAccount *sqlx.Stmt `query:"update-account"`
-	DeleteAccount *sqlx.Stmt `query:"delete-account"`
-	ListAccounts  *sqlx.Stmt `query:"list-accounts"`
-	CountAccounts *sqlx.Stmt `query:"count-accounts"`
+	CreateProject *sqlx.Stmt `query:"create-project"`
+	GetProject    *sqlx.Stmt `query:"get-project"`
+	UpdateProject *sqlx.Stmt `query:"update-project"`
+	DeleteProject *sqlx.Stmt `query:"delete-project"`
+	ListProjects  *sqlx.Stmt `query:"list-projects"`
+	CountProjects *sqlx.Stmt `query:"count-projects"`
 
 	// Inbox queries
 	CreateInbox           *sqlx.Stmt `query:"create-inbox"`
 	GetInbox              *sqlx.Stmt `query:"get-inbox"`
 	UpdateInbox           *sqlx.Stmt `query:"update-inbox"`
 	DeleteInbox           *sqlx.Stmt `query:"delete-inbox"`
-	ListInboxesByAccount  *sqlx.Stmt `query:"list-inboxes-by-account"`
-	CountInboxesByAccount *sqlx.Stmt `query:"count-inboxes-by-account"`
+	ListInboxesByProject  *sqlx.Stmt `query:"list-inboxes-by-project"`
+	CountInboxesByProject *sqlx.Stmt `query:"count-inboxes-by-project"`
 	GetInboxByEmail       *sqlx.Stmt `query:"get-inbox-by-email"`
 
 	// Rule queries

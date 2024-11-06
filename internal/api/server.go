@@ -25,6 +25,7 @@ type Server struct {
 
 func NewServer(core *core.Core) *Server {
 	e := echo.New()
+	e.HideBanner = true
 	s := &Server{
 		core: core,
 		echo: e,
@@ -73,11 +74,11 @@ func (s *Server) errorHandler(err error, c echo.Context) {
 
 func (s *Server) routes() {
 	// Account routes
-	s.echo.POST("/accounts", s.createAccount)
-	s.echo.GET("/accounts", s.getAccounts)
-	s.echo.GET("/accounts/:id", s.getAccount)
-	s.echo.PUT("/accounts/:id", s.updateAccount)
-	s.echo.DELETE("/accounts/:id", s.deleteAccount)
+	s.echo.POST("/projects", s.createProject)
+	s.echo.GET("/projects", s.getProjects)
+	s.echo.GET("/projects/:id", s.getProject)
+	s.echo.PUT("/projects/:id", s.updateProject)
+	s.echo.DELETE("/projects/:id", s.deleteProject)
 
 	// Inbox routes
 	s.echo.POST("/accounts/:accountId/inboxes", s.createInbox)

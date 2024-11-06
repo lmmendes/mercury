@@ -1,0 +1,19 @@
+server:
+  http:
+    port: ":8080"
+  smtp:
+    port: ":1025"
+    hostname: "localhost"
+    username: ""
+    password: ""
+  imap:
+    port: ":1143"
+    hostname: "localhost"
+database:
+  url: "postgres://inbox:inbox@localhost:5432/inbox451?sslmode=disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: 5m
+logging:
+  level: info
+  format: json
