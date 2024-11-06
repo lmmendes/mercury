@@ -48,10 +48,10 @@ func LoadConfig(configFile string, ko *koanf.Koanf) (*Config, error) {
 	}
 
 	// Load environment variables
-	// MERCURY_SERVER_HTTP_PORT, MERCURY_SERVER_SMTP_PORT, etc.
-	if err := ko.Load(env.Provider("MERCURY_", ".", func(s string) string {
+	// INBOX451_SERVER_HTTP_PORT, INBOX451_SERVER_SMTP_PORT, etc.
+	if err := ko.Load(env.Provider("INBOX451_", ".", func(s string) string {
 		return strings.Replace(strings.ToLower(
-			strings.TrimPrefix(s, "MERCURY_")), "_", ".", -1)
+			strings.TrimPrefix(s, "INBOX451_")), "_", ".", -1)
 	}), nil); err != nil {
 		return nil, err
 	}
