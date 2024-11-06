@@ -154,15 +154,18 @@ func main() {
 	}
 	defer db.Close()
 
-	// Check if the DB schema is installed.
-	if ok, err := checkSchema(db); err != nil {
-		logger.Fatalf("error checking schema in DB: %v", err)
-	} else if !ok {
-		logger.Fatal("the database does not appear to be setup. Run --install.")
+	if ko.Bool("install") {
+		install(db, cfg, !ko.Bool("yes"), ko.Bool("idempotent"))
+		os.Exit(0)
 	}
 
 	// Check if the DB schema is installed.
 	checkInstall(db)
+
+	if ko.Bool("upgrade") {
+		upgrade(db, cfg, !ko.Bool("yes"))
+		os.Exit(0)
+	}
 
 	// Check DB migrations and up-to-date
 	checkUpgrade(db)

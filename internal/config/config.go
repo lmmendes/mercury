@@ -42,34 +42,9 @@ type Config struct {
 }
 
 func LoadConfig(configFile string, ko *koanf.Koanf) (*Config, error) {
-	// Load default configuration
-	defaultConfig := []byte(`
-server:
-  http:
-    port: ":8080"
-  smtp:
-    port: ":1025"
-    hostname: "localhost"
-    username: ""
-    password: ""
-  imap:
-    port: ":1143"
-    hostname: "localhost"
-database:
-  url: "postgres://mercury:mercury@localhost:5432/mercury?sslmode=disable"
-  max_open_conns: 25
-  max_idle_conns: 5
-  conn_max_lifetime: 5m
-logging:
-	level: "info"
-	format: "json"
-`)
 
 	if err := ko.Load(file.Provider(configFile), yaml.Parser()); err != nil {
-		// If config file doesn't exist, use only defaults and environment variables
-		if err := ko.Load(file.Provider(string(defaultConfig)), yaml.Parser()); err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	// Load environment variables

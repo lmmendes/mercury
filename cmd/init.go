@@ -20,8 +20,11 @@ func initFlags() *koanf.Koanf {
 		os.Exit(0)
 	}
 
+	f.String("config", "config.yml", "path to the config file")
+	f.Bool("idempotent", false, "make --install run only if the database isn't already setup")
 	f.Bool("install", false, "setup database (first time)")
 	f.Bool("upgrade", false, "upgrade database to the current version")
+	f.Bool("yes", false, "assume 'yes' to prompts during --install/upgrade")
 
 	if err := f.Parse(os.Args[1:]); err != nil {
 		logger.Fatalf("error loading flags: %v", err)
