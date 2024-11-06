@@ -29,12 +29,6 @@ func install(db *sqlx.DB, config *config.Config, prompt, idempotent bool) {
 	// No migrations to run.
 	if len(toRun) == 0 {
 		return
-	} else {
-	}
-
-	var vers []string
-	for _, m := range toRun {
-		vers = append(vers, m.version)
 	}
 
 	for _, m := range toRun {
