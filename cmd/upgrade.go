@@ -27,7 +27,7 @@ func upgrade(db *sqlx.DB, config *config.Config, prompt bool) {
 	if prompt {
 		var ok string
 		fmt.Printf("** IMPORTANT: Take a backup of the database before upgrading.\n")
-		fmt.Print("continue (y/n)?  ")
+		fmt.Print("Continue (y/n)?  ")
 		if _, err := fmt.Scanf("%s", &ok); err != nil {
 			logger.Fatalf("error reading value from terminal: %v", err)
 		}

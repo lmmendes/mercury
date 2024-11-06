@@ -34,3 +34,6 @@ go.work
 # Ignore config files
 config.yml
 config.yaml
+
+# Ignore all files in the /tmp directory
+/tmp

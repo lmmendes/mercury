@@ -34,7 +34,8 @@ func initDB(cfg *config.Config) (*sqlx.DB, error) {
 		if err == nil {
 			break
 		}
-		fmt.Printf("Failed to connect to database, retrying in 2 seconds... (%d/%d)\n", i+1, maxRetries)
+		fmt.Printf("Failed to connect to database: %v\n", err)
+		fmt.Printf("Retrying in 2 seconds... (%d/%d)\n", i+1, maxRetries)
 		time.Sleep(2 * time.Second)
 	}
 	if err != nil {
@@ -147,6 +148,8 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Failed to load configuration: %v", err)
 	}
+
+	fmt.Printf("config=%v", cfg)
 
 	db, err := initDB(cfg)
 	if err != nil {
