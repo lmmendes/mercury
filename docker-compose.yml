@@ -1,19 +1,48 @@
+x-environment: &shared-environment
+  POSTGRES_USER: ${POSTGRES_USER:-inbox}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inbox}
+  POSTGRES_DB: ${POSTGRES_DB:-inbox451}
+  POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+  POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+
 services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: inbox
-      POSTGRES_PASSWORD: inbox
-      POSTGRES_DB: inbox451
+      <<: *shared-environment
     ports:
       - "5432:5432"
+    networks:
+      - inbox451
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./tmp/postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mercury"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-inbox} -d ${POSTGRES_DB:-inbox451}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
+  pgweb:
+    container_name: pgweb
+    image: sosedoff/pgweb:latest
+    build: .
+    environment:
+      <<: *shared-environment
+      PGWEB_DATABASE_URL: postgres://${POSTGRES_USER:-inbox}:${POSTGRES_PASSWORD:-inbox}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-inbox451}?sslmode=disable
+    ports:
+      - 8081:8081
+    networks:
+      - inbox451
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nc", "-vz", "127.0.0.1", "8081"]
+      interval: 5s
 
-volumes:
-  postgres_data:
+networks:
+  inbox451:
+    driver: bridge
