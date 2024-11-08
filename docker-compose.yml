@@ -25,23 +25,26 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-  pgweb:
-    container_name: pgweb
-    image: sosedoff/pgweb:latest
-    build: .
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
     environment:
-      <<: *shared-environment
-      PGWEB_DATABASE_URL: postgres://${POSTGRES_USER:-inbox}:${POSTGRES_PASSWORD:-inbox}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-inbox451}?sslmode=disable
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-inbox451@inbox451.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-inbox451}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "False"
+      PGADMIN_CONFIG_LOGIN_REQUIRED: "False"
+    volumes:
+      - ./tmp/pgadmin_data:/var/lib/pgadmin
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json
     ports:
-      - 8081:8081
+      - "8081:80"
     networks:
       - inbox451
+    restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "nc", "-vz", "127.0.0.1", "8081"]
-      interval: 5s
+      - postgres
 
 networks:
   inbox451:
