@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Account, Mail } from '../types'
-import AccountSwitcher from './AccountSwitcher.vue'
+import type { Project, Mail } from '../types'
+import ProjectSwitcher from './ProjectSwitcher.vue'
 import MailDisplay from './MailDisplay.vue'
 import MailList from './MailList.vue'
 import Nav from './Nav.vue'
@@ -16,7 +16,7 @@ import { refDebounced } from '@vueuse/core'
 import type { LinkProp } from './Nav.vue'
 
 interface Props {
-  accounts: Account[]
+  projects: Project[]
   mails: Mail[]
   defaultLayout?: number[]
   defaultCollapsed?: boolean
@@ -149,7 +149,7 @@ function onExpand() {
         @collapse="onCollapse"
       >
         <div :class="cn('flex h-[52px] items-center justify-center', isCollapsed ? 'h-[52px]' : 'px-2')">
-          <AccountSwitcher :is-collapsed="isCollapsed" :accounts="accounts" />
+          <ProjectSwitcher :is-collapsed="isCollapsed" :projects="projects" />
         </div>
         <Separator />
         <Nav :is-collapsed="isCollapsed" :links="links" />

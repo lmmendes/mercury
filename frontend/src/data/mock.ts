@@ -1,6 +1,6 @@
-import type { Account, Mail } from '../types';
+import type { Project, Mail } from '../types';
 
-export const mockAccounts: Account[] = [
+export const mockProjects: Project[] = [
   {
     id: '1',
     name: 'Personal',

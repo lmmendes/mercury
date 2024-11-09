@@ -1,4 +1,4 @@
-export interface Account {
+export interface Project {
   id: string
   name: string
   email: string
@@ -7,7 +7,7 @@ export interface Account {
 
 export interface Inbox {
   id: string
-  accountId: string
+  projectId: string
   email: string
 }
 

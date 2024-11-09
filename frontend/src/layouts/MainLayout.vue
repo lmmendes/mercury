@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import Mail from '../components/Mail.vue'
-import { mockAccounts, mockMails } from '../data/mock'
+import { mockProjects, mockMails } from '../data/mock'
 </script>
 
 <template>
   <div class="h-screen">
     <Mail
-      :accounts="mockAccounts"
+      :projects="mockProjects"
       :mails="mockMails"
       :nav-collapsed-size="4"
     />
