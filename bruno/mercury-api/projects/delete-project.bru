@@ -1,11 +1,11 @@
 meta {
-  name: Delete Account
+  name: Delete Project
   type: http
   seq: 4
 }
 
 delete {
-  url: {{base_url}}/accounts/1
+  url: {{base_url}}/projects/1
   auth: none
 }
 
@@ -14,7 +14,7 @@ headers {
 }
 
 tests {
-  test("should delete account", function() {
+  test("should delete project", function() {
     expect(res.status).to.equal(204);
   });
 }

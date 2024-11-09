@@ -3,7 +3,14 @@ package api
 import (
 	"context"
 	"mercury/internal/core"
+	"net/http"
+	"strings"
 	"time"
+
+	"mercury/internal/assets"
+
+	"mime"
+	"path/filepath"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -47,7 +54,47 @@ func NewServer(core *core.Core) *Server {
 	// Set custom error handler
 	e.HTTPErrorHandler = s.errorHandler
 
-	s.routes()
+	// API routes
+	api := e.Group("/api")
+	s.routes(api)
+
+	// Serve frontend assets
+	e.GET("/*", func(c echo.Context) error {
+		path := c.Param("*")
+		if path == "" || path == "/" {
+			path = "index.html"
+		}
+
+		if path[0] == '/' {
+			path = path[1:]
+		}
+
+		core.Logger.Info("Attempting to serve: %s", path)
+
+		// Try to read the file
+		data, err := assets.FS.Read(path)
+		if err != nil {
+			core.Logger.Error("Failed to read file %s: %v", path, err)
+			// If the file is not found and it's not an API route, serve index.html
+			if !strings.HasPrefix(path, "api/") {
+				indexData, err := assets.FS.Read("index.html")
+				if err != nil {
+					return c.String(http.StatusNotFound, "File not found")
+				}
+				return c.HTMLBlob(http.StatusOK, indexData)
+			}
+			return c.String(http.StatusNotFound, "File not found")
+		}
+
+		// Determine content type based on file extension
+		contentType := mime.TypeByExtension(filepath.Ext(path))
+		if contentType == "" {
+			contentType = http.DetectContentType(data)
+		}
+
+		return c.Blob(http.StatusOK, contentType, data)
+	})
+
 	return s
 }
 
@@ -72,30 +119,30 @@ func (s *Server) errorHandler(err error, c echo.Context) {
 	}
 }
 
-func (s *Server) routes() {
-	// Account routes
-	s.echo.POST("/projects", s.createProject)
-	s.echo.GET("/projects", s.getProjects)
-	s.echo.GET("/projects/:id", s.getProject)
-	s.echo.PUT("/projects/:id", s.updateProject)
-	s.echo.DELETE("/projects/:id", s.deleteProject)
+func (s *Server) routes(api *echo.Group) {
+	// Project routes
+	api.POST("/projects", s.createProject)
+	api.GET("/projects", s.getProjects)
+	api.GET("/projects/:id", s.getProject)
+	api.PUT("/projects/:id", s.updateProject)
+	api.DELETE("/projects/:id", s.deleteProject)
 
 	// Inbox routes
-	s.echo.POST("/accounts/:accountId/inboxes", s.createInbox)
-	s.echo.GET("/accounts/:accountId/inboxes", s.getInboxes)
-	s.echo.GET("/accounts/:accountId/inboxes/:inboxId", s.getInbox)
-	s.echo.PUT("/accounts/:accountId/inboxes/:inboxId", s.updateInbox)
-	s.echo.DELETE("/accounts/:accountId/inboxes/:inboxId", s.deleteInbox)
+	api.POST("/projects/:projectId/inboxes", s.createInbox)
+	api.GET("/projects/:projectId/inboxes", s.getInboxes)
+	api.GET("/projects/:projectId/inboxes/:inboxId", s.getInbox)
+	api.PUT("/projects/:projectId/inboxes/:inboxId", s.updateInbox)
+	api.DELETE("/projects/:projectId/inboxes/:inboxId", s.deleteInbox)
 
 	// Rule routes
-	s.echo.POST("/accounts/:accountId/inboxes/:inboxId/rules", s.createRule)
-	s.echo.GET("/accounts/:accountId/inboxes/:inboxId/rules", s.getRules)
-	s.echo.GET("/accounts/:accountId/inboxes/:inboxId/rules/:ruleId", s.getRule)
-	s.echo.PUT("/accounts/:accountId/inboxes/:inboxId/rules/:ruleId", s.updateRule)
-	s.echo.DELETE("/accounts/:accountId/inboxes/:inboxId/rules/:ruleId", s.deleteRule)
+	api.POST("/projects/:projectId/inboxes/:inboxId/rules", s.createRule)
+	api.GET("/projects/:projectId/inboxes/:inboxId/rules", s.getRules)
+	api.GET("/projects/:projectId/inboxes/:inboxId/rules/:ruleId", s.getRule)
+	api.PUT("/projects/:projectId/inboxes/:inboxId/rules/:ruleId", s.updateRule)
+	api.DELETE("/projects/:projectId/inboxes/:inboxId/rules/:ruleId", s.deleteRule)
 
 	// Message routes
-	s.echo.GET("/accounts/:accountId/inboxes/:inboxId/messages", s.getMessages)
+	api.GET("/projects/:projectId/inboxes/:inboxId/messages", s.getMessages)
 }
 
 func (s *Server) ListenAndServe() error {
