@@ -1,7 +1,7 @@
 package api
 
 import (
-	"mercury/internal/models"
+	"inbox451/internal/models"
 	"net/http"
 	"strconv"
 

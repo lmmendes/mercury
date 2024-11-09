@@ -2,12 +2,13 @@ package api
 
 import (
 	"context"
-	"mercury/internal/core"
+	"inbox451/internal/core"
+	"inbox451/internal/middleware"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	echomiddleware "github.com/labstack/echo/v4/middleware"
 )
 
 type CustomValidator struct {
@@ -32,17 +33,17 @@ func NewServer(core *core.Core) *Server {
 	}
 
 	// Add timeout middleware with a 30-second timeout
-	e.Use(TimeoutMiddleware(30 * time.Second))
+	e.Use(middleware.TimeoutMiddleware(30 * time.Second))
 
 	// Set custom validator
 	e.Validator = &CustomValidator{validator: validator.New()}
 
 	// Add middleware
-	e.Use(middleware.Recover())
-	e.Use(middleware.Logger())
-	e.Use(middleware.CORS())
-	e.Use(middleware.RequestID())
-	e.Use(middleware.Secure())
+	e.Use(echomiddleware.Recover())
+	e.Use(echomiddleware.Logger())
+	e.Use(echomiddleware.CORS())
+	e.Use(echomiddleware.RequestID())
+	e.Use(echomiddleware.Secure())
 
 	// Set custom error handler
 	e.HTTPErrorHandler = s.errorHandler

@@ -1,6 +1,8 @@
 package models
 
 import (
+	"encoding/json"
+
 	null "github.com/volatiletech/null/v9"
 )
 
@@ -41,7 +43,7 @@ type ProjectUser struct {
 	Role      string `json:"role" db:"role" validate:"required"`
 }
 
-type UserToken struct {
+type ApiKey struct {
 	Base
 	UserID int    `json:"user_id" db:"user_id" validate:"required"`
 	Token  string `json:"token" db:"token" validate:"required"`
@@ -62,4 +64,15 @@ type Message struct {
 	Receiver string `json:"receiver" db:"receiver" validate:"required,email"`
 	Subject  string `json:"subject" db:"subject" validate:"required,max=200"`
 	Body     string `json:"body" db:"body" validate:"required"`
+}
+
+type Session struct {
+	Base
+	SessionID      string          `db:"session_id" json:"session_id"`
+	UserID         int64           `db:"user_id" json:"user_id"`
+	Data           json.RawMessage `db:"data" json:"data"`
+	LastAccessedAt null.Time       `db:"last_accessed_at" json:"last_accessed_at"`
+	IPAddress      string          `db:"ip_address" json:"ip_address"`
+	UserAgent      string          `db:"user_agent" json:"user_agent"`
+	IsActive       bool            `db:"is_active" json:"is_active"`
 }

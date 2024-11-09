@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"mercury/internal/models"
+	"inbox451/internal/models"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"

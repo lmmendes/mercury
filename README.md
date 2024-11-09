@@ -112,7 +112,7 @@ make dev
 
 # Manual start
 docker compose up -d db
-go run cmd/mercury/main.go
+go run cmd/inbox451/main.go
 ```
 
 ## API Examples
@@ -208,7 +208,6 @@ QUIT
 ├── internal/
 │   ├── api/             # HTTP API implementation
 │   │   ├── handlers.go
-│   │   ├── middleware.go
 │   │   └── server.go
 │   ├── config/          # Configuration management
 │   ├── core/            # Business logic
@@ -217,6 +216,7 @@ QUIT
 │   │   ├── messages.go
 │   │   └── rules.go
 │   ├── logger/          # Logging package
+│   ├── middleware/      # http server middleware
 │   ├── models/          # Data models and pagination
 │   ├── smtp/            # SMTP server implementation
 │   ├── imap/           # IMAP server implementation

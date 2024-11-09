@@ -3,10 +3,10 @@ package core
 import (
 	"context"
 	"fmt"
-	"mercury/internal/config"
-	"mercury/internal/logger"
-	"mercury/internal/models"
-	"mercury/internal/storage"
+	"inbox451/internal/config"
+	"inbox451/internal/logger"
+	"inbox451/internal/models"
+	"inbox451/internal/storage"
 	"os"
 
 	"github.com/jmoiron/sqlx"

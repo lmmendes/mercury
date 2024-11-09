@@ -3,8 +3,8 @@ package migrations
 import (
 	"database/sql"
 	"fmt"
+	"inbox451/internal/config"
 	"log"
-	"mercury/internal/config"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -66,13 +66,20 @@ func V0_1_0(db *sqlx.DB, config *config.Config, log *log.Logger) error {
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
 
-		`CREATE TABLE IF NOT EXISTS user_tokens (
+		`CREATE TABLE IF NOT EXISTS api_keys (
 			id SERIAL PRIMARY KEY,
 			user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 			token VARCHAR(255) NOT NULL UNIQUE,
+			is_active BOOLEAN DEFAULT true,
+			last_used_at TIMESTAMP WITH TIME ZONE,
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
+
+		`
+		CREATE INDEX idx_user_tokens_token ON api_keys(token);
+		CREATE INDEX idx_user_tokens_user_id ON api_keys(user_id);
+		`,
 
 		`CREATE TABLE IF NOT EXISTS forward_rules (
 			id SERIAL PRIMARY KEY,
@@ -95,6 +102,26 @@ func V0_1_0(db *sqlx.DB, config *config.Config, log *log.Logger) error {
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
+
+		`CREATE TABLE sessions (
+		    id SERIAL PRIMARY KEY,
+		    session_id VARCHAR(255) NOT NULL,
+		    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		    data JSONB DEFAULT '{}'::jsonb,
+		    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+		    last_accessed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		    ip_address VARCHAR(45),
+		    user_agent TEXT,
+		    is_active BOOLEAN DEFAULT true,
+		    UNIQUE (session_id)
+		)`,
+
+		`
+		CREATE INDEX idx_sessions_session_id ON sessions(session_id);
+		CREATE INDEX idx_sessions_user_id ON sessions(user_id);
+		CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
+		`,
 	}
 
 	// Start a transaction
