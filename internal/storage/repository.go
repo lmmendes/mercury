@@ -46,6 +46,10 @@ type Repository interface {
 	UpdateUser(ctx context.Context, user *models.User) error
 	DeleteUser(ctx context.Context, id int) error
 	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
+
+	// Tokens
+	ListTokens(ctx context.Context, limit, offset int) ([]*models.Token, int, error)
+	GetToken(ctx context.Context, id int) (*models.Token, error)
 }
 
 type repository struct {
@@ -350,3 +354,5 @@ func (r *repository) DeleteUser(ctx context.Context, id int) error {
 	}
 	return nil
 }
+
+// Tokens

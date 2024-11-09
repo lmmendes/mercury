@@ -43,10 +43,10 @@ type ProjectUser struct {
 	Role      string `json:"role" db:"role" validate:"required"`
 }
 
-type ApiKey struct {
+type Token struct {
 	Base
 	UserID int    `json:"user_id" db:"user_id" validate:"required"`
-	Token  string `json:"token" db:"token" validate:"required"`
+	Token  string `json:"-" db:"token" validate:"required"`
 }
 
 type ForwardRule struct {

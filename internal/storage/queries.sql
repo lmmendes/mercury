@@ -151,3 +151,33 @@ SELECT id, name, username, password, email, status, role,
        password_login, loggedin_at, created_at, updated_at
 FROM users
 WHERE username = $1;
+
+--- ------------------------------------------
+-- Tokens
+-- -------------------------------------------
+
+-- name: list-tokens
+SELECT id, user_id, created_at, updated_at
+FROM tokens
+ORDER BY id
+LIMIT $1 OFFSET $2;
+
+-- name: get-token
+SELECT id, user_id, created_at, updated_at
+FROM tokens
+WHERE id = $1;
+
+-- name: get-tokens-by-user
+SELECT id, user_id, created_at, updated_at
+FROM tokens
+WHERE user_id = $1
+ORDER BY id
+LIMIT $2 OFFSET $3;
+
+-- name: count-tokens
+SELECT COUNT(1) FROM tokens;
+
+-- name: count-project-by-user
+SELECT COUNT(1)
+FROM tokens
+WHERE user_id = $1;

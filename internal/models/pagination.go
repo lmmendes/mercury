@@ -5,11 +5,13 @@ type PaginationQuery struct {
 	Offset int `query:"offset" validate:"min=0"`
 }
 
+type Pagination struct {
+	Total  int `json:"total"`
+	Limit  int `json:"limit"`
+	Offset int `json:"offset"`
+}
+
 type PaginatedResponse struct {
 	Data       interface{} `json:"data"`
-	Pagination struct {
-		Total  int `json:"total"`
-		Limit  int `json:"limit"`
-		Offset int `json:"offset"`
-	} `json:"pagination"`
+	Pagination Pagination  `json:"pagination"`
 }

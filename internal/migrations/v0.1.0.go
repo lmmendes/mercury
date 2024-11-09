@@ -66,7 +66,7 @@ func V0_1_0(db *sqlx.DB, config *config.Config, log *log.Logger) error {
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
 
-		`CREATE TABLE IF NOT EXISTS api_keys (
+		`CREATE TABLE IF NOT EXISTS tokens (
 			id SERIAL PRIMARY KEY,
 			user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 			token VARCHAR(255) NOT NULL UNIQUE,
@@ -77,8 +77,8 @@ func V0_1_0(db *sqlx.DB, config *config.Config, log *log.Logger) error {
 		)`,
 
 		`
-		CREATE INDEX idx_user_tokens_token ON api_keys(token);
-		CREATE INDEX idx_user_tokens_user_id ON api_keys(user_id);
+		CREATE INDEX idx_user_tokens_token ON tokens(token);
+		CREATE INDEX idx_user_tokens_user_id ON tokens(user_id);
 		`,
 
 		`CREATE TABLE IF NOT EXISTS forward_rules (

@@ -38,5 +38,8 @@ config.yaml
 # Ignore all files in the /tmp directory
 /tmp
 
-# Go release distribution
+# Go release distribution and binaries
+inbox451
+install
+uninstall
 /dist

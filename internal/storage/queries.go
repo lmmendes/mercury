@@ -13,7 +13,7 @@ import (
 var queriesFS embed.FS
 
 type Queries struct {
-	// Account queries
+	// Projects queries
 	CreateProject *sqlx.Stmt `query:"create-project"`
 	GetProject    *sqlx.Stmt `query:"get-project"`
 	UpdateProject *sqlx.Stmt `query:"update-project"`
@@ -52,6 +52,11 @@ type Queries struct {
 	UpdateUser        *sqlx.Stmt `query:"update-user"`
 	DeleteUser        *sqlx.Stmt `query:"delete-user"`
 	GetUserByUsername *sqlx.Stmt `query:"get-user-by-username"`
+
+	// Tokens
+	ListTokens  *sqlx.Stmt `query:"list-tokens"`
+	CountTokens *sqlx.Stmt `query:"count-tokens"`
+	GetToken    *sqlx.Stmt `query:"get-token"`
 }
 
 func PrepareQueries(db *sqlx.DB) (*Queries, error) {
