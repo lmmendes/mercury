@@ -13,7 +13,7 @@ import (
 var queriesFS embed.FS
 
 type Queries struct {
-	// Projects queries
+	// Project queries
 	CreateProject *sqlx.Stmt `query:"create-project"`
 	GetProject    *sqlx.Stmt `query:"get-project"`
 	UpdateProject *sqlx.Stmt `query:"update-project"`

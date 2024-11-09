@@ -17,7 +17,7 @@ tests {
   test("should return a single inbox", function() {
     expect(res.status).to.equal(200);
     expect(res.body).to.have.property('id');
-    expect(res.body).to.have.property('account_id');
+    expect(res.body).to.have.property('project_id');
     expect(res.body).to.have.property('email');
   });
 

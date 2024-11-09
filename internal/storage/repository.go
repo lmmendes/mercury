@@ -12,10 +12,10 @@ import (
 )
 
 type Repository interface {
-	// Account operations
-	CreateProject(ctx context.Context, account *models.Project) error
+	// Project operations
+	CreateProject(ctx context.Context, project *models.Project) error
 	GetProject(ctx context.Context, id int) (*models.Project, error)
-	UpdateProject(ctx context.Context, account *models.Project) error
+	UpdateProject(ctx context.Context, project *models.Project) error
 	DeleteProject(ctx context.Context, id int) error
 	ListProjects(ctx context.Context, limit, offset int) ([]*models.Project, int, error)
 

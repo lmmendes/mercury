@@ -14,13 +14,12 @@ type Base struct {
 
 type Project struct {
 	Base
-	ID   int    `json:"id" db:"id"`
 	Name string `json:"name" db:"name" validate:"required,min=2,max=100"`
 }
 
 type Inbox struct {
 	Base
-	ProjectID int    `json:"project_id" db:"account_id" validate:"required"`
+	ProjectID int    `json:"project_id" db:"project_id" validate:"required"`
 	Email     string `json:"email" db:"email" validate:"required,email"`
 }
 
