@@ -15,7 +15,11 @@ FRONTEND_DEPS = \
 	$(FRONTEND_MODULES) \
 	frontend/index.html \
 	frontend/package.json \
-	frontend/vite.config.js \
+	frontend/vite.config.ts \
+	frontend/tsconfig.app.json \
+	frontend/tsconfig.node.json \
+	frontend/tailwind.config.js \
+	frontend/components.json \
 	$(shell find frontend/src frontend/public -type f)
 
 BIN := inbox451
