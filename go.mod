@@ -1,6 +1,8 @@
 module mercury
 
-go 1.22
+go 1.22.0
+
+toolchain go1.22.8
 
 require (
 	github.com/emersion/go-imap v1.2.1
@@ -12,11 +14,14 @@ require (
 	github.com/knadh/koanf/parsers/yaml v0.1.0
 	github.com/knadh/koanf/providers/env v1.0.0
 	github.com/knadh/koanf/providers/file v1.1.2
+	github.com/knadh/koanf/providers/posflag v0.1.0
 	github.com/knadh/koanf/v2 v2.1.1
 	github.com/knadh/stuffbin v1.3.0
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/lib/pq v1.10.9
+	github.com/spf13/pflag v1.0.5
 	github.com/volatiletech/null/v9 v9.0.0
+	golang.org/x/mod v0.21.0
 	golang.org/x/net v0.30.0
 )
 

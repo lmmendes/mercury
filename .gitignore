@@ -30,6 +30,7 @@ go.work
 
 # Environment variables
 .env
+
 *.local
 
 # Binary
@@ -50,3 +51,10 @@ frontend/lerna-debug.log*
 frontend/node_modules
 frontend/dist
 frontend/dist-ssr
+
+# Ignore config files
+config.yml
+config.yaml
+
+# Ignore all files in the /tmp directory
+/tmp

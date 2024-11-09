@@ -1,4 +1,4 @@
-# Mercury
+# Inbox451
 
 A simple email server that allows you to create inboxes and rules to filter emails, written in Go.
 
@@ -105,7 +105,7 @@ server:
     port: ":1143"
     hostname: "localhost"
 database:
-  url: "postgres://mercury:mercury@localhost:5432/mercury?sslmode=disable"
+  url: "postgres://inbox:inbox@localhost:5432/inbox451?sslmode=disable"
   max_open_conns: 25
   max_idle_conns: 5
   conn_max_lifetime: 5m
@@ -119,10 +119,10 @@ logging:
 Environment variables override config file settings:
 
 ```shell
-MERCURY_SERVER_HTTP_PORT=":9090"
-MERCURY_SERVER_SMTP_PORT=":2025"
-MERCURY_DATABASE_URL="postgres://user:pass@host:5432/dbname"
-MERCURY_LOGGING_LEVEL="debug"
+INBOX451_SERVER_HTTP_PORT=":9090"
+INBOX451_SERVER_SMTP_PORT=":2025"
+INBOX451_DATABASE_URL="postgres://user:pass@host:5432/dbname"
+INBOX451_LOGGING_LEVEL="debug"
 ```
 
 ## Running the Server
