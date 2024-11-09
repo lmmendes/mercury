@@ -9,11 +9,12 @@ import (
 
 	"mercury/internal/assets"
 
+	"mime"
+	"path/filepath"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"mime"
-	"path/filepath"
 )
 
 type CustomValidator struct {
@@ -120,28 +121,28 @@ func (s *Server) errorHandler(err error, c echo.Context) {
 
 func (s *Server) routes(api *echo.Group) {
 	// Project routes
-	s.echo.POST("/projects", s.createProject)
-	s.echo.GET("/projects", s.getProjects)
-	s.echo.GET("/projects/:id", s.getProject)
-	s.echo.PUT("/projects/:id", s.updateProject)
-	s.echo.DELETE("/projects/:id", s.deleteProject)
+	api.POST("/projects", s.createProject)
+	api.GET("/projects", s.getProjects)
+	api.GET("/projects/:id", s.getProject)
+	api.PUT("/projects/:id", s.updateProject)
+	api.DELETE("/projects/:id", s.deleteProject)
 
 	// Inbox routes
-	api.POST("/accounts/:accountId/inboxes", s.createInbox)
-	api.GET("/accounts/:accountId/inboxes", s.getInboxes)
-	api.GET("/accounts/:accountId/inboxes/:inboxId", s.getInbox)
-	api.PUT("/accounts/:accountId/inboxes/:inboxId", s.updateInbox)
-	api.DELETE("/accounts/:accountId/inboxes/:inboxId", s.deleteInbox)
+	api.POST("/projects/:projectId/inboxes", s.createInbox)
+	api.GET("/projects/:projectId/inboxes", s.getInboxes)
+	api.GET("/projects/:projectId/inboxes/:inboxId", s.getInbox)
+	api.PUT("/projects/:projectId/inboxes/:inboxId", s.updateInbox)
+	api.DELETE("/projects/:projectId/inboxes/:inboxId", s.deleteInbox)
 
 	// Rule routes
-	api.POST("/accounts/:accountId/inboxes/:inboxId/rules", s.createRule)
-	api.GET("/accounts/:accountId/inboxes/:inboxId/rules", s.getRules)
-	api.GET("/accounts/:accountId/inboxes/:inboxId/rules/:ruleId", s.getRule)
-	api.PUT("/accounts/:accountId/inboxes/:inboxId/rules/:ruleId", s.updateRule)
-	api.DELETE("/accounts/:accountId/inboxes/:inboxId/rules/:ruleId", s.deleteRule)
+	api.POST("/projects/:projectId/inboxes/:inboxId/rules", s.createRule)
+	api.GET("/projects/:projectId/inboxes/:inboxId/rules", s.getRules)
+	api.GET("/projects/:projectId/inboxes/:inboxId/rules/:ruleId", s.getRule)
+	api.PUT("/projects/:projectId/inboxes/:inboxId/rules/:ruleId", s.updateRule)
+	api.DELETE("/projects/:projectId/inboxes/:inboxId/rules/:ruleId", s.deleteRule)
 
 	// Message routes
-	api.GET("/accounts/:accountId/inboxes/:inboxId/messages", s.getMessages)
+	api.GET("/projects/:projectId/inboxes/:inboxId/messages", s.getMessages)
 }
 
 func (s *Server) ListenAndServe() error {

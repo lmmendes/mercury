@@ -21,25 +21,25 @@ func (s *ProjectService) Create(ctx context.Context, project *models.Project) er
 		return err
 	}
 
-	s.core.Logger.Info("Successfully created account with ID: %d", project.ID)
+	s.core.Logger.Info("Successfully created project with ID: %d", project.ID)
 	return nil
 }
 
 func (s *ProjectService) Get(ctx context.Context, id int) (*models.Project, error) {
 	s.core.Logger.Debug("Fetching project with ID: %d", id)
 
-	account, err := s.core.Repository.GetProject(ctx, id)
+	project, err := s.core.Repository.GetProject(ctx, id)
 	if err != nil {
 		s.core.Logger.Error("Failed to fetch project: %v", err)
 		return nil, err
 	}
 
-	if account == nil {
+	if project == nil {
 		s.core.Logger.Info("Project not found with ID: %d", id)
 		return nil, ErrNotFound
 	}
 
-	return account, nil
+	return project, nil
 }
 
 func (s *ProjectService) Update(ctx context.Context, project *models.Project) error {
@@ -82,6 +82,6 @@ func (s *ProjectService) List(ctx context.Context, limit, offset int) (*models.P
 	response.Pagination.Limit = limit
 	response.Pagination.Offset = offset
 
-	s.core.Logger.Info("Successfully retrieved %d accounts (total: %d)", len(projects), total)
+	s.core.Logger.Info("Successfully retrieved %d projects (total: %d)", len(projects), total)
 	return response, nil
 }

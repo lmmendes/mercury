@@ -187,9 +187,6 @@ func main() {
 	}
 
 	// Parse command line flags
-	configFile := flag.String("config", "config/default.yaml", "Path to configuration file")
-	flag.Parse()
-
 	ko := initFlags()
 	cfg, err := config.LoadConfig(ko.String("config"), ko)
 	if err != nil {

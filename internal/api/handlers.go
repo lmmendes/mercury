@@ -90,7 +90,7 @@ func (s *Server) deleteProject(c echo.Context) error {
 }
 
 func (s *Server) createInbox(c echo.Context) error {
-	projectID, _ := strconv.Atoi(c.Param("accountId"))
+	projectID, _ := strconv.Atoi(c.Param("projectId"))
 	var inbox models.Inbox
 	if err := c.Bind(&inbox); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
@@ -109,7 +109,7 @@ func (s *Server) createInbox(c echo.Context) error {
 }
 
 func (s *Server) getInboxes(c echo.Context) error {
-	accountID, _ := strconv.Atoi(c.Param("accountId"))
+	projectID, _ := strconv.Atoi(c.Param("projectId"))
 
 	var query models.PaginationQuery
 	if err := c.Bind(&query); err != nil {
@@ -124,7 +124,7 @@ func (s *Server) getInboxes(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	response, err := s.core.InboxService.ListByProject(c.Request().Context(), accountID, query.Limit, query.Offset)
+	response, err := s.core.InboxService.ListByProject(c.Request().Context(), projectID, query.Limit, query.Offset)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
@@ -145,14 +145,14 @@ func (s *Server) getInbox(c echo.Context) error {
 
 func (s *Server) updateInbox(c echo.Context) error {
 	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
-	projectID, _ := strconv.Atoi(c.Param("accountId"))
+	projectID, _ := strconv.Atoi(c.Param("projectId"))
 
 	var inbox models.Inbox
 	if err := c.Bind(&inbox); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	// Set both ID and AccountID before validation
+	// Set both ID and ProjectID before validation
 	inbox.ID = inboxID
 	inbox.ProjectID = projectID
 

@@ -4,9 +4,10 @@ VERSION := $(or $(shell git describe --tags --abbrev=0 2> /dev/null),"v0.0.0")
 BUILDSTR := ${VERSION} (\#${LAST_COMMIT} $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
 
 # Tool paths
-GOPATH ?= $(HOME)/go
+GOPATH ?= $(shell go env GOPATH)
 STUFFBIN ?= $(GOPATH)/bin/stuffbin
 PNPM ?= pnpm
+GO ?= $(shell which go)
 
 # Frontend paths
 FRONTEND_MODULES = frontend/node_modules
@@ -25,7 +26,7 @@ FRONTEND_DEPS = \
 BIN := inbox451
 STATIC := frontend/dist:/
 
-.PHONY: build deps build-frontend run-frontend dev test pack-bin
+.PHONY: build deps build-frontend run-frontend dev test pack-bin dev-reset
 
 # Install required tools
 $(STUFFBIN):
@@ -52,20 +53,35 @@ build:
 	CGO_ENABLED=0 go build -o ${BIN} -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}'" cmd/*.go
 
 # Run the backend in dev mode
-dev: db-up
-	CGO_ENABLED=0 go run -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}' -X 'main.frontendDir=frontend/dist'" cmd/*.go
+dev: db-up db-init
+	CGO_ENABLED=0 $(GO) run -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}' -X 'main.frontendDir=frontend/dist'" cmd/*.go
 
 # Database operations
 db-up:
-	docker compose up -d db
+	docker compose up -d postgres
+	@echo "Waiting for PostgreSQL to be ready..."
+	@sleep 3
 
 db-down:
 	docker compose down
 
 db-clean:
 	docker compose down -v
+	docker volume rm inbox451_postgres_data || true
+	docker rm inbox451-db-1 || true
 
-db-reset: db-down db-clean db-up
+db-reset: db-clean db-up db-init
+
+# Database initialization and upgrade targets
+db-install:
+	CGO_ENABLED=0 $(GO) run -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}'" cmd/*.go --install --yes
+
+db-upgrade:
+	CGO_ENABLED=0 $(GO) run -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}'" cmd/*.go --upgrade --yes
+
+# Initialize database if needed
+db-init:
+	@CGO_ENABLED=0 $(GO) run -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}'" cmd/*.go --install --yes --idempotent || true
 
 # Testing
 test:
@@ -79,3 +95,6 @@ pack-bin: $(STUFFBIN) build build-frontend
 deps: $(STUFFBIN)
 	go mod download
 	cd frontend && $(PNPM) install
+
+# Full reset: down, clean, up, and initialize
+dev-reset: postgres-reset db-init dev

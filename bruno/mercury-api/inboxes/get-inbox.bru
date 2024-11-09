@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: {{base_url}}/accounts/1/inboxes/1
+  url: {{base_url}}/projects/1/inboxes/1
   auth: none
 }
 
@@ -17,7 +17,7 @@ tests {
   test("should return a single inbox", function() {
     expect(res.status).to.equal(200);
     expect(res.body).to.have.property('id');
-    expect(res.body).to.have.property('account_id');
+    expect(res.body).to.have.property('project_id');
     expect(res.body).to.have.property('email');
   });
 

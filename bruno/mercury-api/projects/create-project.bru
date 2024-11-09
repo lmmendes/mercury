@@ -1,11 +1,11 @@
 meta {
-  name: Create Account
+  name: Create Project
   type: http
   seq: 1
 }
 
 post {
-  url: {{base_url}}/accounts
+  url: {{base_url}}/projects
   body: json
   auth: none
 }
@@ -17,13 +17,13 @@ headers {
 
 body:json {
   {
-    "name": "Test Account"
+    "name": "Test Project"
   }
 }
 
 tests {
-  test("should create a new account", function() {
+  test("should create a new project", function() {
     expect(res.status).to.equal(201);
-    expect(res.body.name).to.equal("Test Account");
+    expect(res.body.name).to.equal("Test Project");
   });
 }
