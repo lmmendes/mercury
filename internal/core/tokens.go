@@ -13,12 +13,12 @@ func NewTokensService(core *Core) TokensService {
 	return TokensService{core: core}
 }
 
-func (s *TokensService) List(ctx context.Context, limit, offset int) (*models.PaginatedResponse, error) {
-	s.core.Logger.Info("Listing tokens with limit: %d and offset: %d", limit, offset)
+func (s *TokensService) ListByUser(ctx context.Context, user_id int, limit, offset int) (*models.PaginatedResponse, error) {
+	s.core.Logger.Info("Listing tokens for user_id=%d with limit: %d and offset: %d", user_id, limit, offset)
 
-	tokens, total, err := s.core.Repository.ListTokens(ctx, limit, offset)
+	tokens, total, err := s.core.Repository.ListTokensByUser(ctx, user_id, limit, offset)
 	if err != nil {
-		s.core.Logger.Error("Failed to list projects: %v", err)
+		s.core.Logger.Error("Failed to list tokens for user_id=%d: %v", user_id, err)
 		return nil, err
 	}
 
@@ -31,14 +31,14 @@ func (s *TokensService) List(ctx context.Context, limit, offset int) (*models.Pa
 		},
 	}
 
-	s.core.Logger.Info("Successfully retrieved %d tokens (total: %d)", len(tokens), total)
+	s.core.Logger.Info("Successfully retrieved %d tokens for user_id=%d (total: %d)", len(tokens), user_id, total)
 	return response, nil
 }
 
-func (s *TokensService) Get(ctx context.Context, id int) (*models.Token, error) {
+func (s *TokensService) Get(ctx context.Context, id int, user_id int) (*models.Token, error) {
 	s.core.Logger.Debug("Fetching token with ID: %d", id)
 
-	token, err := s.core.Repository.GetToken(ctx, id)
+	token, err := s.core.Repository.GetTokenByUser(ctx, id, user_id)
 	if err != nil {
 		s.core.Logger.Error("Failed to fetch token: %v", err)
 		return nil, err

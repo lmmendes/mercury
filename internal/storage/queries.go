@@ -54,9 +54,9 @@ type Queries struct {
 	GetUserByUsername *sqlx.Stmt `query:"get-user-by-username"`
 
 	// Tokens
-	ListTokens  *sqlx.Stmt `query:"list-tokens"`
-	CountTokens *sqlx.Stmt `query:"count-tokens"`
-	GetToken    *sqlx.Stmt `query:"get-token"`
+	ListTokensByUser  *sqlx.Stmt `query:"list-tokens-by-user"`
+	CountTokensByUser *sqlx.Stmt `query:"count-tokens-by-user"`
+	GetTokenByUser    *sqlx.Stmt `query:"get-token-by-user"`
 }
 
 func PrepareQueries(db *sqlx.DB) (*Queries, error) {
