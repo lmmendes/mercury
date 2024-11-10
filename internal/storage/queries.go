@@ -23,6 +23,10 @@ type Queries struct {
 	UpdateProject       *sqlx.Stmt `query:"update-project"`
 	DeleteProject       *sqlx.Stmt `query:"delete-project"`
 
+	// ProjectUser queries
+	AddUserToProject      *sqlx.Stmt `query:"add-user-to-project"`
+	RemoveUserFromProject *sqlx.Stmt `query:"remove-user-from-project"`
+
 	// Inbox queries
 	CreateInbox           *sqlx.Stmt `query:"create-inbox"`
 	GetInbox              *sqlx.Stmt `query:"get-inbox"`

@@ -47,6 +47,18 @@ DELETE FROM projects WHERE id = $1;
 SELECT COUNT(*) FROM projects;
 
 --- ------------------------------------------
+-- Project Users
+-- -------------------------------------------
+
+-- name: add-user-to-project
+INSERT INTO user_projects (user_id, project_id, role, created_at, updated_at)
+VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+
+-- name: remove-user-from-project
+DELETE FROM user_projects
+WHERE user_id = $1 AND project_id = $2;
+
+--- ------------------------------------------
 -- Inboxes
 -- -------------------------------------------
 
