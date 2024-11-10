@@ -1,6 +1,8 @@
 package models
 
 import (
+	"encoding/json"
+
 	null "github.com/volatiletech/null/v9"
 )
 
@@ -12,13 +14,12 @@ type Base struct {
 
 type Project struct {
 	Base
-	ID   int    `json:"id" db:"id"`
 	Name string `json:"name" db:"name" validate:"required,min=2,max=100"`
 }
 
 type Inbox struct {
 	Base
-	ProjectID int    `json:"project_id" db:"account_id" validate:"required"`
+	ProjectID int    `json:"project_id" db:"project_id" validate:"required"`
 	Email     string `json:"email" db:"email" validate:"required,email"`
 }
 
@@ -41,10 +42,12 @@ type ProjectUser struct {
 	Role      string `json:"role" db:"role" validate:"required"`
 }
 
-type UserToken struct {
+type Token struct {
 	Base
-	UserID int    `json:"user_id" db:"user_id" validate:"required"`
-	Token  string `json:"token" db:"token" validate:"required"`
+	UserID    int       `json:"user_id" db:"user_id" validate:"required"`
+	Token     string    `json:"token" db:"token" validate:"required"`
+	Name      string    `json:"name" db:"name" validate:"required"`
+	ExpiresAt null.Time `json:"expires_at" db:"expires_at"`
 }
 
 type ForwardRule struct {
@@ -62,4 +65,15 @@ type Message struct {
 	Receiver string `json:"receiver" db:"receiver" validate:"required,email"`
 	Subject  string `json:"subject" db:"subject" validate:"required,max=200"`
 	Body     string `json:"body" db:"body" validate:"required"`
+}
+
+type Session struct {
+	Base
+	SessionID      string          `db:"session_id" json:"session_id"`
+	UserID         int64           `db:"user_id" json:"user_id"`
+	Data           json.RawMessage `db:"data" json:"data"`
+	LastAccessedAt null.Time       `db:"last_accessed_at" json:"last_accessed_at"`
+	IPAddress      string          `db:"ip_address" json:"ip_address"`
+	UserAgent      string          `db:"user_agent" json:"user_agent"`
+	IsActive       bool            `db:"is_active" json:"is_active"`
 }

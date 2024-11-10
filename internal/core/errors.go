@@ -3,7 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
-	"mercury/internal/storage"
+	"inbox451/internal/storage"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"

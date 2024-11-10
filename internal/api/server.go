@@ -2,12 +2,19 @@ package api
 
 import (
 	"context"
-	"mercury/internal/core"
+	"inbox451/internal/assets"
+	"inbox451/internal/core"
+	"inbox451/internal/middleware"
+	"net/http"
+	"strings"
 	"time"
+
+	"mime"
+	"path/filepath"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	echomiddleware "github.com/labstack/echo/v4/middleware"
 )
 
 type CustomValidator struct {
@@ -32,22 +39,62 @@ func NewServer(core *core.Core) *Server {
 	}
 
 	// Add timeout middleware with a 30-second timeout
-	e.Use(TimeoutMiddleware(30 * time.Second))
+	e.Use(middleware.TimeoutMiddleware(30 * time.Second))
 
 	// Set custom validator
 	e.Validator = &CustomValidator{validator: validator.New()}
 
 	// Add middleware
-	e.Use(middleware.Recover())
-	e.Use(middleware.Logger())
-	e.Use(middleware.CORS())
-	e.Use(middleware.RequestID())
-	e.Use(middleware.Secure())
+	e.Use(echomiddleware.Recover())
+	e.Use(echomiddleware.Logger())
+	e.Use(echomiddleware.CORS())
+	e.Use(echomiddleware.RequestID())
+	e.Use(echomiddleware.Secure())
 
 	// Set custom error handler
 	e.HTTPErrorHandler = s.errorHandler
 
-	s.routes()
+	// API routes
+	api := e.Group("/api")
+	s.routes(api)
+
+	// Serve frontend assets
+	e.GET("/*", func(c echo.Context) error {
+		path := c.Param("*")
+		if path == "" || path == "/" {
+			path = "index.html"
+		}
+
+		if path[0] == '/' {
+			path = path[1:]
+		}
+
+		core.Logger.Info("Attempting to serve: %s", path)
+
+		// Try to read the file
+		data, err := assets.FS.Read(path)
+		if err != nil {
+			core.Logger.Error("Failed to read file %s: %v", path, err)
+			// If the file is not found and it's not an API route, serve index.html
+			if !strings.HasPrefix(path, "api/") {
+				indexData, err := assets.FS.Read("index.html")
+				if err != nil {
+					return c.String(http.StatusNotFound, "File not found")
+				}
+				return c.HTMLBlob(http.StatusOK, indexData)
+			}
+			return c.String(http.StatusNotFound, "File not found")
+		}
+
+		// Determine content type based on file extension
+		contentType := mime.TypeByExtension(filepath.Ext(path))
+		if contentType == "" {
+			contentType = http.DetectContentType(data)
+		}
+
+		return c.Blob(http.StatusOK, contentType, data)
+	})
+
 	return s
 }
 
@@ -70,32 +117,6 @@ func (s *Server) errorHandler(err error, c echo.Context) {
 			s.core.Logger.Error("Failed to send error response: %v", err)
 		}
 	}
-}
-
-func (s *Server) routes() {
-	// Account routes
-	s.echo.POST("/projects", s.createProject)
-	s.echo.GET("/projects", s.getProjects)
-	s.echo.GET("/projects/:id", s.getProject)
-	s.echo.PUT("/projects/:id", s.updateProject)
-	s.echo.DELETE("/projects/:id", s.deleteProject)
-
-	// Inbox routes
-	s.echo.POST("/accounts/:accountId/inboxes", s.createInbox)
-	s.echo.GET("/accounts/:accountId/inboxes", s.getInboxes)
-	s.echo.GET("/accounts/:accountId/inboxes/:inboxId", s.getInbox)
-	s.echo.PUT("/accounts/:accountId/inboxes/:inboxId", s.updateInbox)
-	s.echo.DELETE("/accounts/:accountId/inboxes/:inboxId", s.deleteInbox)
-
-	// Rule routes
-	s.echo.POST("/accounts/:accountId/inboxes/:inboxId/rules", s.createRule)
-	s.echo.GET("/accounts/:accountId/inboxes/:inboxId/rules", s.getRules)
-	s.echo.GET("/accounts/:accountId/inboxes/:inboxId/rules/:ruleId", s.getRule)
-	s.echo.PUT("/accounts/:accountId/inboxes/:inboxId/rules/:ruleId", s.updateRule)
-	s.echo.DELETE("/accounts/:accountId/inboxes/:inboxId/rules/:ruleId", s.deleteRule)
-
-	// Message routes
-	s.echo.GET("/accounts/:accountId/inboxes/:inboxId/messages", s.getMessages)
 }
 
 func (s *Server) ListenAndServe() error {

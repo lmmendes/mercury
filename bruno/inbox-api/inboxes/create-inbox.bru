@@ -1,0 +1,29 @@
+meta {
+  name: Create Inbox
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/projects/1/inboxes
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "email": "inbox@example.com"
+  }
+}
+
+tests {
+  test("should create a new inbox", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body.email).to.equal("inbox@example.com");
+  });
+}

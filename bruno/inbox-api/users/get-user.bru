@@ -1,0 +1,31 @@
+meta {
+  name: Get User
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/users/1
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+tests {
+  test("should return a single user", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property('id');
+    expect(res.body).to.have.property('name');
+    expect(res.body).to.have.property('username');
+    expect(res.body).to.have.property('email');
+  });
+
+  test("should return 404 for non-existent user", function() {
+    if (res.status === 404) {
+      expect(res.body).to.have.property('code').that.equals(404);
+      expect(res.body).to.have.property('message');
+    }
+  });
+}

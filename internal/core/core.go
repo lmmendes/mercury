@@ -3,10 +3,10 @@ package core
 import (
 	"context"
 	"fmt"
-	"mercury/internal/config"
-	"mercury/internal/logger"
-	"mercury/internal/models"
-	"mercury/internal/storage"
+	"inbox451/internal/config"
+	"inbox451/internal/logger"
+	"inbox451/internal/models"
+	"inbox451/internal/storage"
 	"os"
 
 	"github.com/jmoiron/sqlx"
@@ -18,6 +18,8 @@ type Core struct {
 	Logger     *logger.Logger
 	Repository storage.Repository
 
+	UserService    UserService
+	TokenService   TokenService
 	ProjectService ProjectService
 	InboxService   InboxService
 	RuleService    RuleService
@@ -38,10 +40,12 @@ func NewCore(cfg *config.Config, db *sqlx.DB) (*Core, error) {
 		Repository: repo,
 	}
 
+	core.UserService = NewUserService(core)
 	core.ProjectService = NewProjectService(core)
 	core.InboxService = NewInboxService(core)
 	core.RuleService = NewRuleService(core)
 	core.MessageService = NewMessageService(core)
+	core.TokenService = NewTokensService(core)
 
 	return core, nil
 }

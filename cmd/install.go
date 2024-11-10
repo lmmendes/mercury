@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"inbox451/internal/config"
 	"log"
-	"mercury/internal/config"
 
 	"github.com/jmoiron/sqlx"
 )
