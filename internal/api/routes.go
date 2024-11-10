@@ -45,4 +45,5 @@ func (s *Server) routes(api *echo.Group) {
 
 	// Message routes
 	api.GET("/projects/:projectId/inboxes/:inboxId/messages", s.getMessages)
+	api.GET("/projects/:projectId/inboxes/:inboxId/messages/:messageId", s.getMessage)
 }

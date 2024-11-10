@@ -30,3 +30,16 @@ func (s *Server) getMessages(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, response)
 }
+
+func (s *Server) getMessage(c echo.Context) error {
+	messageID, _ := strconv.Atoi(c.Param("messageId"))
+
+	message, err := s.core.MessageService.Get(c.Request().Context(), messageID)
+	if err != nil {
+		return s.core.HandleError(err, http.StatusInternalServerError)
+	}
+	if message == nil {
+		return s.core.HandleError(nil, http.StatusNotFound)
+	}
+	return c.JSON(http.StatusOK, message)
+}
