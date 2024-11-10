@@ -163,7 +163,7 @@ WHERE user_id = $1
 ORDER BY id
 LIMIT $2 OFFSET $3;
 
--- name: count-project-by-user
+-- name: count-tokens-by-user
 SELECT COUNT(1)
 FROM tokens
 WHERE user_id = $1;
@@ -172,3 +172,8 @@ WHERE user_id = $1;
 SELECT id, user_id, created_at, updated_at
 FROM tokens
 WHERE id = $1 AND user_id = $2
+
+-- name: create-token
+INSERT INTO tokens (user_id, token)
+VALUES ($1, $2)
+RETURNING id, user_id, token, created_at, updated_at;

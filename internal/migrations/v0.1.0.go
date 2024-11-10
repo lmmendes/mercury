@@ -70,7 +70,6 @@ func V0_1_0(db *sqlx.DB, config *config.Config, log *log.Logger) error {
 			id SERIAL PRIMARY KEY,
 			user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 			token VARCHAR(255) NOT NULL UNIQUE,
-			is_active BOOLEAN DEFAULT true,
 			last_used_at TIMESTAMP WITH TIME ZONE,
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

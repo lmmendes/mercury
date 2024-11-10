@@ -48,9 +48,9 @@ type Repository interface {
 	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
 
 	// Tokens
-	ListTokensByUser(ctx context.Context, user_id int, limit, offset int) ([]*models.Token, int, error)
-	GetTokenByUser(ctx context.Context, token_id int, user_id int) (*models.Token, error)
-	CreateToken(ctx context.Context, user *models.Token) error
+	ListTokensByUser(ctx context.Context, userID int, limit, offset int) ([]*models.Token, int, error)
+	GetTokenByUser(ctx context.Context, userID int, tokenID int) (*models.Token, error)
+	CreateToken(ctx context.Context, token *models.Token) error
 }
 
 type repository struct {
