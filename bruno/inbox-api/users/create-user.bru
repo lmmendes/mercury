@@ -1,0 +1,38 @@
+meta {
+  name: Create User
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/users
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "name": "John Doe",
+    "username": "johndoe",
+    "password": "secure_password",
+    "email": "john@example.com",
+    "status": "active",
+    "role": "user",
+    "password_login": true
+  }
+}
+
+tests {
+  test("should create a new user", function() {
+    expect(res.status).to.equal(201);
+    expect(res.body).to.have.property('id');
+    expect(res.body).to.have.property('name').that.equals('John Doe');
+    expect(res.body).to.have.property('username').that.equals('johndoe');
+    expect(res.body).to.have.property('email').that.equals('john@example.com');
+  });
+}

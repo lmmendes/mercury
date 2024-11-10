@@ -10,12 +10,12 @@ import (
 	"syscall"
 	"time"
 
-	"mercury/internal/api"
-	"mercury/internal/assets"
-	"mercury/internal/config"
-	"mercury/internal/core"
-	"mercury/internal/imap"
-	"mercury/internal/smtp"
+	"inbox451/internal/api"
+	"inbox451/internal/assets"
+	"inbox451/internal/config"
+	"inbox451/internal/core"
+	"inbox451/internal/imap"
+	"inbox451/internal/smtp"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/knadh/koanf/providers/posflag"

@@ -1,7 +1,7 @@
 package config
 
 import (
-	"mercury/internal/logger"
+	"inbox451/internal/logger"
 	"strings"
 	"time"
 

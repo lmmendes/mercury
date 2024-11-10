@@ -1,0 +1,20 @@
+meta {
+  name: Delete User
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{base_url}}/users/1
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+tests {
+  test("should delete user", function() {
+    expect(res.status).to.equal(204);
+  });
+}

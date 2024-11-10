@@ -3,7 +3,7 @@ package imap
 import (
 	"context"
 	"errors"
-	"mercury/internal/core"
+	"inbox451/internal/core"
 	"time"
 
 	"github.com/emersion/go-imap"

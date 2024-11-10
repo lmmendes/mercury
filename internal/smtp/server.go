@@ -3,9 +3,9 @@ package smtp
 import (
 	"bytes"
 	"fmt"
+	"inbox451/internal/core"
+	"inbox451/internal/models"
 	"io"
-	"mercury/internal/core"
-	"mercury/internal/models"
 	"time"
 
 	"github.com/emersion/go-message"

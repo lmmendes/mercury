@@ -2,7 +2,7 @@ package core
 
 import (
 	"context"
-	"mercury/internal/models"
+	"inbox451/internal/models"
 )
 
 type RuleService struct {

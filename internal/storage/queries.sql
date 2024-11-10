@@ -1,12 +1,36 @@
--- name: create-project
-INSERT INTO projects (name, created_at, updated_at)
-VALUES ($1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-RETURNING id, created_at, updated_at;
+--- ------------------------------------------
+-- Users
+-- -------------------------------------------
+
+-- name: list-projects
+SELECT id, name, created_at, updated_at
+FROM projects
+ORDER BY id
+LIMIT $1 OFFSET $2;
+
+-- name: list-projects-by-user
+SELECT projects.id, projects.name, projects.created_at, projects.updated_at
+FROM projects
+INNER JOIN project_users ON projects.id = project_users.project_id
+WHERE project_users.user_id = $1
+ORDER BY projects.id
+LIMIT $2 OFFSET $3;
+
+-- name: count-projects-by-user
+SELECT COUNT(DISTINCT(projects.id))
+FROM projects
+INNER JOIN project_users ON projects.id = project_users.project_id
+WHERE project_users.user_id = $1;
 
 -- name: get-project
 SELECT id, name, created_at, updated_at
 FROM projects
 WHERE id = $1;
+
+-- name: create-project
+INSERT INTO projects (name, created_at, updated_at)
+VALUES ($1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+RETURNING id, created_at, updated_at;
 
 -- name: update-project
 UPDATE projects
@@ -17,14 +41,25 @@ RETURNING updated_at;
 -- name: delete-project
 DELETE FROM projects WHERE id = $1;
 
--- name: list-projects
-SELECT id, name, created_at, updated_at
-FROM projects
-ORDER BY id
-LIMIT $1 OFFSET $2;
-
 -- name: count-projects
 SELECT COUNT(*) FROM projects;
+
+--- ------------------------------------------
+-- Project Users
+-- -------------------------------------------
+
+-- name: add-user-to-project
+INSERT INTO project_users (user_id, project_id, role)
+VALUES ($1, $2, $3)
+RETURNING created_at, updated_at;
+
+-- name: remove-user-from-project
+DELETE FROM project_users
+WHERE user_id = $1 AND project_id = $2;
+
+--- ------------------------------------------
+-- Inboxes
+-- -------------------------------------------
 
 -- name: create-inbox
 INSERT INTO inboxes (project_id, email, created_at, updated_at)
@@ -60,6 +95,10 @@ WHERE project_id = $1;
 SELECT id, project_id, email, created_at, updated_at
 FROM inboxes
 WHERE email = $1;
+
+--- ------------------------------------------
+-- Rules
+-- -------------------------------------------
 
 -- name: create-rule
 INSERT INTO forward_rules (inbox_id, sender, receiver, subject, created_at, updated_at)
@@ -100,6 +139,10 @@ LIMIT $1 OFFSET $2;
 -- name: count-rules
 SELECT COUNT(*) FROM forward_rules;
 
+--- ------------------------------------------
+-- Messages
+-- -------------------------------------------
+
 -- name: create-message
 INSERT INTO messages (inbox_id, sender, receiver, subject, body, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -121,6 +164,21 @@ LIMIT $2 OFFSET $3;
 SELECT COUNT(*)
 FROM messages
 WHERE inbox_id = $1;
+
+--- ------------------------------------------
+-- Users
+-- -------------------------------------------
+
+-- name: list-users
+SELECT id, name, username, password, email, status, role,
+       loggedin_at, created_at, updated_at
+FROM users
+ORDER BY id
+LIMIT $1 OFFSET $2;
+
+-- name: count-users
+SELECT COUNT(*)
+FROM users
 
 -- name: create-user
 INSERT INTO users (
@@ -151,3 +209,33 @@ SELECT id, name, username, password, email, status, role,
        password_login, loggedin_at, created_at, updated_at
 FROM users
 WHERE username = $1;
+
+--- ------------------------------------------
+-- Tokens
+-- -------------------------------------------
+
+-- name: list-tokens-by-user
+SELECT id, user_id, token, name, expires_at, created_at, updated_at
+FROM tokens
+WHERE user_id = $1
+ORDER BY id
+LIMIT $2 OFFSET $3;
+
+-- name: count-tokens-by-user
+SELECT COUNT(1)
+FROM tokens
+WHERE user_id = $1;
+
+-- name: get-token-by-user
+SELECT id, user_id, token, name, expires_at, created_at, updated_at
+FROM tokens
+WHERE id = $1 AND user_id = $2
+
+-- name: create-token
+INSERT INTO tokens (user_id, token, name, expires_at)
+VALUES ($1, $2, $3, $4)
+RETURNING id, user_id, token, name, expires_at, created_at, updated_at;
+
+-- name: delete-token
+DELETE FROM tokens
+WHERE id = $1

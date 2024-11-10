@@ -1,0 +1,27 @@
+meta {
+  name: Get Tokens
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/users/1/tokens?limit=10&offset=0
+  auth: none
+}
+
+query {
+  limit: 10
+  offset: 0
+}
+
+headers {
+  Accept: application/json
+}
+
+tests {
+  test("should return paginated tokens list", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property('data').that.is.an('array');
+    expect(res.body).to.have.property('pagination').that.includes.all.keys(['total', 'limit', 'offset']);
+  });
+}
