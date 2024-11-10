@@ -3,6 +3,7 @@ LAST_COMMIT := $(or $(shell git rev-parse --short HEAD 2> /dev/null),"unknown")
 VERSION := $(or $(shell git describe --tags --abbrev=0 2> /dev/null),"v0.0.0")
 BUILDSTR := ${VERSION} (\#${LAST_COMMIT} $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
 
+
 # Tool paths
 GOPATH ?= $(shell go env GOPATH)
 STUFFBIN ?= $(GOPATH)/bin/stuffbin

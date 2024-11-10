@@ -59,7 +59,7 @@ config.yaml
 # Ignore all files in the /tmp directory
 /tmp
 
-# Go release distribution and binaries
+# Ignore inbox451 excutable, distribution and binaries
 inbox451
 install
 uninstall
