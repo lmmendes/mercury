@@ -138,39 +138,39 @@ go run cmd/inbox451/main.go
 
 ## API Examples
 
-### Account Management
+### Project Management
 
-Create an Account:
+Create an Projects:
 ```shell
-curl -X POST http://localhost:8080/accounts \
+curl -X POST http://localhost:8080/projects \
   -H "Content-Type: application/json" \
   -d '{"name": "Test Account"}'
 ```
 
-List Accounts (with pagination):
+List Projects (with pagination):
 ```shell
-curl "http://localhost:8080/accounts?limit=10&offset=0"
+curl "http://localhost:8080/projects?limit=10&offset=0"
 ```
 
 ### Inbox Management
 
 Create an Inbox:
 ```shell
-curl -X POST http://localhost:8080/accounts/1/inboxes \
+curl -X POST http://localhost:8080/projects/1/inboxes \
   -H "Content-Type: application/json" \
   -d '{"email": "inbox@example.com"}'
 ```
 
 List Inboxes for Account (with pagination):
 ```shell
-curl "http://localhost:8080/accounts/1/inboxes?limit=10&offset=0"
+curl "http://localhost:8080/projects/1/inboxes?limit=10&offset=0"
 ```
 
 ### Rule Management
 
 Create a Rule:
 ```shell
-curl -X POST http://localhost:8080/accounts/1/inboxes/1/rules \
+curl -X POST http://localhost:8080/project/1/inboxes/1/rules \
   -H "Content-Type: application/json" \
   -d '{
     "sender": "sender@example.com",
@@ -181,7 +181,7 @@ curl -X POST http://localhost:8080/accounts/1/inboxes/1/rules \
 
 List Rules for Inbox:
 ```shell
-curl http://localhost:8080/accounts/1/inboxes/1/rules
+curl http://localhost:8080/proejcts/1/inboxes/1/rules
 ```
 
 ## Testing Email Reception

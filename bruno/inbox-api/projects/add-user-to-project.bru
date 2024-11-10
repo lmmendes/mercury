@@ -1,0 +1,18 @@
+meta {
+  name: add-user-to-project
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{base_url}}/projects/1/users
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "user_id": 1,
+    "role": "admin"
+  }
+}

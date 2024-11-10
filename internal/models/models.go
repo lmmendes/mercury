@@ -37,8 +37,8 @@ type User struct {
 
 type ProjectUser struct {
 	Base
-	ProjectID int    `json:"project_id" db:"project_id" validate:"required"`
-	UserID    int    `json:"user_id" db:"user_id" validate:"required"`
+	ProjectID int    `json:"project_id" db:"project_id" validate:"required`
+	UserID    int    `json:"user_id" db:"user_id" validate:"required`
 	Role      string `json:"role" db:"role" validate:"required"`
 }
 

@@ -107,14 +107,14 @@ func (s *Server) updateProject(c echo.Context) error {
 
 func (s *Server) projectAddUser(c echo.Context) error {
 	projectID, _ := strconv.Atoi(c.Param("projectId"))
-	userID, _ := strconv.Atoi(c.Param("userId"))
+
+	s.core.Logger.Info("hello")
 
 	var projectUser models.ProjectUser
 	if err := c.Bind(&projectUser); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 	projectUser.ProjectID = projectID
-	projectUser.UserID = userID
 
 	if err := c.Validate(&projectUser); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
@@ -128,7 +128,7 @@ func (s *Server) projectAddUser(c echo.Context) error {
 }
 
 func (s *Server) deleteProject(c echo.Context) error {
-	projectID, _ := strconv.Atoi(c.Param("projectID"))
+	projectID, _ := strconv.Atoi(c.Param("projectId"))
 	if err := s.core.ProjectService.Delete(c.Request().Context(), projectID); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
@@ -136,7 +136,7 @@ func (s *Server) deleteProject(c echo.Context) error {
 }
 
 func (s *Server) projectRemoveUser(c echo.Context) error {
-	projectID, _ := strconv.Atoi(c.Param("projectID"))
+	projectID, _ := strconv.Atoi(c.Param("projectId"))
 	userID, _ := strconv.Atoi(c.Param("userId"))
 	if err := s.core.ProjectService.RemoveUser(c.Request().Context(), projectID, userID); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)

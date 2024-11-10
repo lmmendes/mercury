@@ -12,16 +12,16 @@ func (s *Server) routes(api *echo.Group) {
 	api.DELETE("/users/:userId", s.deleteUser)
 	api.GET("/users/:userId/projects", s.getProjectsByUser)
 
+	// ProjectUser routes
+	api.POST("/projects/:projectId/users", s.projectAddUser)
+	api.DELETE("/projects/:projectId/users/:userId", s.projectRemoveUser)
+
 	// Project routes
 	api.POST("/projects", s.createProject)
 	api.GET("/projects", s.getProjects)
 	api.GET("/projects/:projectId", s.getProject)
 	api.PUT("/projects/:projectId", s.updateProject)
 	api.DELETE("/projects/:projectId", s.deleteProject)
-
-	// ProjectUser routes
-	api.POST("/projects/:projectId/users", s.projectAddUser)
-	api.DELETE("/projects/:projectId/users/:userId", s.projectRemoveUser)
 
 	// Token routes
 	api.GET("/users/:userId/tokens", s.ListTokensByUser)
