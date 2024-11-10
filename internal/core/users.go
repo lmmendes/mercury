@@ -14,7 +14,7 @@ func NewUserService(core *Core) UserService {
 }
 
 func (s *UserService) Create(ctx context.Context, user *models.User) error {
-	s.core.Logger.Info("Creating new project: %s", user.Name)
+	s.core.Logger.Info("Creating new user: %s", user.Name)
 
 	if err := s.core.Repository.CreateUser(ctx, user); err != nil {
 		s.core.Logger.Error("Failed to create user: %v", err)
@@ -28,25 +28,25 @@ func (s *UserService) Create(ctx context.Context, user *models.User) error {
 func (s *UserService) Get(ctx context.Context, userID int) (*models.User, error) {
 	s.core.Logger.Debug("Fetching user with ID: %d", userID)
 
-	project, err := s.core.Repository.GetUser(ctx, userID)
+	user, err := s.core.Repository.GetUser(ctx, userID)
 	if err != nil {
 		s.core.Logger.Error("Failed to fetch user: %v", err)
 		return nil, err
 	}
 
-	if project == nil {
+	if user == nil {
 		s.core.Logger.Info("User not found with ID: %d", userID)
 		return nil, ErrNotFound
 	}
 
-	return project, nil
+	return user, nil
 }
 
 func (s *UserService) Update(ctx context.Context, user *models.User) error {
 	s.core.Logger.Info("Updating user with ID: %d", user.ID)
 
 	if err := s.core.Repository.UpdateUser(ctx, user); err != nil {
-		s.core.Logger.Error("Failed to user project: %v", err)
+		s.core.Logger.Error("Failed to update user: %v", err)
 		return err
 	}
 
