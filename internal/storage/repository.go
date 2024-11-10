@@ -18,6 +18,11 @@ type Repository interface {
 	UpdateProject(ctx context.Context, project *models.Project) error
 	DeleteProject(ctx context.Context, id int) error
 
+	// ProjectUser operations
+	// This is a many-to-many relationship between projects and users
+	ProjectAddUser(ctx context.Context, projectUser *models.ProjectUser) error
+	ProjectRemoveUser(ctx context.Context, projectID int, userID int) error
+
 	// Inbox operations
 	ListInboxesByProject(ctx context.Context, projectID, limit, offset int) ([]*models.Inbox, int, error)
 	GetInbox(ctx context.Context, id int) (*models.Inbox, error)

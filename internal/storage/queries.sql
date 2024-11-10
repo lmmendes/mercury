@@ -51,8 +51,9 @@ SELECT COUNT(*) FROM projects;
 -- -------------------------------------------
 
 -- name: add-user-to-project
-INSERT INTO user_projects (user_id, project_id, role, created_at, updated_at)
-VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+INSERT INTO user_projects (user_id, project_id, role)
+VALUES ($1, $2, $3)
+RETURNING created_at, updated_at;
 
 -- name: remove-user-from-project
 DELETE FROM user_projects

@@ -57,17 +57,17 @@ func (s *ProjectService) ListByUser(ctx context.Context, userID int, limit, offs
 	return response, nil
 }
 
-func (s *ProjectService) Get(ctx context.Context, id int) (*models.Project, error) {
-	s.core.Logger.Debug("Fetching project with ID: %d", id)
+func (s *ProjectService) Get(ctx context.Context, projectId int) (*models.Project, error) {
+	s.core.Logger.Debug("Fetching project with ID: %d", projectId)
 
-	project, err := s.core.Repository.GetProject(ctx, id)
+	project, err := s.core.Repository.GetProject(ctx, projectId)
 	if err != nil {
 		s.core.Logger.Error("Failed to fetch project: %v", err)
 		return nil, err
 	}
 
 	if project == nil {
-		s.core.Logger.Info("Project not found with ID: %d", id)
+		s.core.Logger.Info("Project not found with ID: %d", projectId)
 		return nil, ErrNotFound
 	}
 
@@ -95,6 +95,30 @@ func (s *ProjectService) Update(ctx context.Context, project *models.Project) er
 	}
 
 	s.core.Logger.Info("Successfully updated project with ID: %d", project.ID)
+	return nil
+}
+
+func (s *ProjectService) AddUser(ctx context.Context, projectUser *models.ProjectUser) error {
+	s.core.Logger.Debug("Adding user %d to project %d with role=%s", projectUser.UserID, projectUser.ProjectID, projectUser.Role)
+
+	if err := s.core.Repository.ProjectAddUser(ctx, projectUser); err != nil {
+		s.core.Logger.Error("Failed to add user to project: %v", err)
+		return err
+	}
+
+	s.core.Logger.Debug("Successfully added user %d to project %d", projectUser.ProjectID, projectUser.UserID)
+	return nil
+}
+
+func (s *ProjectService) RemoveUser(ctx context.Context, projectID int, userID int) error {
+	s.core.Logger.Debug("Remove user %d to project %d", userID, projectID)
+
+	if err := s.core.Repository.ProjectRemoveUser(ctx, projectID, userID); err != nil {
+		s.core.Logger.Error("Failed to add user to project: %v", err)
+		return err
+	}
+
+	s.core.Logger.Debug("Successfully removed user %d from project %d", projectID, userID)
 	return nil
 }
 

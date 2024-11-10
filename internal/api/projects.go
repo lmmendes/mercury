@@ -105,9 +105,40 @@ func (s *Server) updateProject(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+func (s *Server) projectAddUser(c echo.Context) error {
+	projectID, _ := strconv.Atoi(c.Param("projectId"))
+	userID, _ := strconv.Atoi(c.Param("userId"))
+
+	var projectUser models.ProjectUser
+	if err := c.Bind(&projectUser); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
+	projectUser.ProjectID = projectID
+	projectUser.UserID = userID
+
+	if err := c.Validate(&projectUser); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
+
+	if err := s.core.ProjectService.AddUser(c.Request().Context(), &projectUser); err != nil {
+		return s.core.HandleError(err, http.StatusInternalServerError)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
 func (s *Server) deleteProject(c echo.Context) error {
 	projectID, _ := strconv.Atoi(c.Param("projectID"))
 	if err := s.core.ProjectService.Delete(c.Request().Context(), projectID); err != nil {
+		return s.core.HandleError(err, http.StatusInternalServerError)
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (s *Server) projectRemoveUser(c echo.Context) error {
+	projectID, _ := strconv.Atoi(c.Param("projectID"))
+	userID, _ := strconv.Atoi(c.Param("userId"))
+	if err := s.core.ProjectService.RemoveUser(c.Request().Context(), projectID, userID); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	return c.NoContent(http.StatusNoContent)
