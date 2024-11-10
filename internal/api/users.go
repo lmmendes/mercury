@@ -82,7 +82,7 @@ func (s *Server) updateUser(c echo.Context) error {
 }
 
 func (s *Server) deleteUser(c echo.Context) error {
-	userID, _ := strconv.Atoi(c.Param("userID"))
+	userID, _ := strconv.Atoi(c.Param("userId"))
 	if err := s.core.UserService.Delete(c.Request().Context(), userID); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
