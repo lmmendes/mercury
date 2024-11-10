@@ -1,18 +1,21 @@
 meta {
-  name: remove-user-from-project
+  name: Remove User from Project
   type: http
   seq: 7
 }
 
-post {
-  url: {{base_url}}/projects/1/users
-  body: json
+delete {
+  url: {{base_url}}/projects/1/users/1
   auth: none
 }
 
-body:json {
-  {
-    "user_id": 1,
-    "role": "admin"
-  }
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+tests {
+  test("should remove user from project", function() {
+    expect(res.status).to.equal(204);
+  });
 }

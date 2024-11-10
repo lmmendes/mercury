@@ -1,5 +1,5 @@
 meta {
-  name: add-user-to-project
+  name: Add User to Project
   type: http
   seq: 6
 }
@@ -10,9 +10,20 @@ post {
   auth: none
 }
 
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
 body:json {
   {
     "user_id": 1,
     "role": "admin"
   }
+}
+
+tests {
+  test("should add user to project", function() {
+    expect(res.status).to.equal(204);
+  });
 }
