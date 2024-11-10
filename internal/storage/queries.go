@@ -47,8 +47,10 @@ type Queries struct {
 	CountMessagesByInbox *sqlx.Stmt `query:"count-messages-by-inbox"`
 
 	// User queries
-	CreateUser        *sqlx.Stmt `query:"create-user"`
+	ListUsers         *sqlx.Stmt `query:"list-users"`
+	CountUsers        *sqlx.Stmt `query:"count-users"`
 	GetUser           *sqlx.Stmt `query:"get-user"`
+	CreateUser        *sqlx.Stmt `query:"create-user"`
 	UpdateUser        *sqlx.Stmt `query:"update-user"`
 	DeleteUser        *sqlx.Stmt `query:"delete-user"`
 	GetUserByUsername *sqlx.Stmt `query:"get-user-by-username"`

@@ -41,11 +41,12 @@ type Repository interface {
 	GetInboxByEmail(ctx context.Context, email string) (*models.Inbox, error)
 
 	// User operations
-	CreateUser(ctx context.Context, user *models.User) error
+	ListUsers(ctx context.Context, limit, offset int) ([]*models.User, int, error)
 	GetUser(ctx context.Context, id int) (*models.User, error)
+	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
+	CreateUser(ctx context.Context, user *models.User) error
 	UpdateUser(ctx context.Context, user *models.User) error
 	DeleteUser(ctx context.Context, userId int) error
-	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
 
 	// Tokens
 	ListTokensByUser(ctx context.Context, userID int, limit, offset int) ([]*models.Token, int, error)
@@ -292,69 +293,3 @@ func (r *repository) GetInboxByEmail(ctx context.Context, email string) (*models
 	}
 	return &inbox, nil
 }
-
-func (r *repository) CreateUser(ctx context.Context, user *models.User) error {
-	return r.queries.CreateUser.QueryRowContext(ctx,
-		user.Name,
-		user.Username,
-		user.Password,
-		user.Email,
-		user.Status,
-		user.Role,
-		user.PasswordLogin).
-		Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
-}
-
-func (r *repository) GetUser(ctx context.Context, id int) (*models.User, error) {
-	var user models.User
-	err := r.queries.GetUser.GetContext(ctx, &user, id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &user, nil
-}
-
-func (r *repository) UpdateUser(ctx context.Context, user *models.User) error {
-	return r.queries.UpdateUser.QueryRowContext(ctx,
-		user.Name,
-		user.Username,
-		user.Password,
-		user.Email,
-		user.Status,
-		user.Role,
-		user.PasswordLogin,
-		user.ID).
-		Scan(&user.UpdatedAt)
-}
-
-func (r *repository) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
-	var user models.User
-	err := r.queries.GetUserByUsername.GetContext(ctx, &user, username)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &user, nil
-}
-
-func (r *repository) DeleteUser(ctx context.Context, id int) error {
-	result, err := r.queries.DeleteUser.ExecContext(ctx, id)
-	if err != nil {
-		return err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return errors.New("user not found")
-	}
-	return nil
-}
-
-// Tokens

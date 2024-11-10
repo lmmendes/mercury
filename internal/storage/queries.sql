@@ -122,6 +122,21 @@ SELECT COUNT(*)
 FROM messages
 WHERE inbox_id = $1;
 
+--- ------------------------------------------
+-- Users
+-- -------------------------------------------
+
+-- name: list-users
+SELECT id, name, username, password, email, status, role,
+       loggedin_at, created_at, updated_at
+FROM users
+ORDER BY id
+LIMIT $1 OFFSET $2;
+
+-- name: count-users
+SELECT COUNT(1)
+FROM users
+
 -- name: create-user
 INSERT INTO users (
     name, username, password, email, status, role,
