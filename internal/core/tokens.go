@@ -54,14 +54,32 @@ func (s *TokenService) GetByUser(ctx context.Context, tokenID int, userID int) (
 	return token, nil
 }
 
-func (s *TokenService) CreateForUser(ctx context.Context, userID int, token *models.Token) (*models.Token, error) {
+func (s *TokenService) CreateForUser(ctx context.Context, userID int, tokenData *models.Token) (*models.Token, error) {
 	s.core.Logger.Debug("Creating token for userId: %d", userID)
 
 	newToken := models.Token{}
 	newToken.UserID = userID
-	newToken.Token = generateSecureTokenBase64()
 
-	err := s.core.Repository.CreateToken(ctx, &newToken)
+	// Use the provided name
+	if tokenData != nil && tokenData.Name != "" {
+		newToken.Name = tokenData.Name
+	} else {
+		newToken.Name = "API Token"
+	}
+
+	tokenStr, err := generateSecureTokenBase64()
+	if err != nil {
+		s.core.Logger.Error("Failed to generate secure token: %v", err)
+		return nil, err
+	}
+	newToken.Token = tokenStr
+
+	// Set expires_at if provided
+	if tokenData != nil {
+		newToken.ExpiresAt = tokenData.ExpiresAt
+	}
+
+	err = s.core.Repository.CreateToken(ctx, &newToken)
 	if err != nil {
 		return nil, err
 	}
@@ -87,20 +105,26 @@ func (s *TokenService) DeleteByUser(ctx context.Context, userID int, tokenID int
 	return nil
 }
 
-// generateSecureTokenBase64 generates a cryptographically secure random token
-// encoded in URL-safe base64. It returns a string of approximately 43 characters
-// (for 32 bytes of entropy) that is safe for use in URLs and file names.
-//
-// The generated token uses the following format:
-//   - 32 bytes of random data from crypto/rand
-//   - URL-safe base64 encoding
-//   - No padding characters
-//
-// Example output: "xJ_dwq8k-rLp5xGhq2d4mNvKzHjY3bWl1fTnM9iR0oE"
-//
-// If the random number generator fails, it returns an empty string and an error.
-func generateSecureTokenBase64() string {
+/*
+	generateSecureTokenBase64 generates a cryptographically secure random token
+
+encoded in URL-safe base64. It returns a string of approximately 43 characters
+(for 32 bytes of entropy) that is safe for use in URLs and file names.
+
+The generated token uses the following format:
+  - 32 bytes of random data from crypto/rand
+  - URL-safe base64 encoding
+  - No padding characters
+
+Example output: "xJ_dwq8k-rLp5xGhq2d4mNvKzHjY3bWl1fTnM9iR0oE"
+
+If the random number generator fails, it returns an empty string and an error.
+*/
+func generateSecureTokenBase64() (string, error) {
 	b := make([]byte, 32)
-	rand.Read(b)
-	return base64.URLEncoding.EncodeToString(b)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(b), nil
 }
