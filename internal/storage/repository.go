@@ -44,13 +44,14 @@ type Repository interface {
 	CreateUser(ctx context.Context, user *models.User) error
 	GetUser(ctx context.Context, id int) (*models.User, error)
 	UpdateUser(ctx context.Context, user *models.User) error
-	DeleteUser(ctx context.Context, id int) error
+	DeleteUser(ctx context.Context, userId int) error
 	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
 
 	// Tokens
 	ListTokensByUser(ctx context.Context, userID int, limit, offset int) ([]*models.Token, int, error)
 	GetTokenByUser(ctx context.Context, userID int, tokenID int) (*models.Token, error)
 	CreateToken(ctx context.Context, token *models.Token) error
+	DeleteToken(ctx context.Context, tokenID int) error
 }
 
 type repository struct {

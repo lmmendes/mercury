@@ -7,15 +7,15 @@ import (
 	"inbox451/internal/models"
 )
 
-type TokensService struct {
+type TokenService struct {
 	core *Core
 }
 
-func NewTokensService(core *Core) TokensService {
-	return TokensService{core: core}
+func NewTokensService(core *Core) TokenService {
+	return TokenService{core: core}
 }
 
-func (s *TokensService) ListByUser(ctx context.Context, userId int, limit, offset int) (*models.PaginatedResponse, error) {
+func (s *TokenService) ListByUser(ctx context.Context, userId int, limit, offset int) (*models.PaginatedResponse, error) {
 	s.core.Logger.Info("Listing tokens for userId %d with limit: %d and offset: %d", userId, limit, offset)
 
 	tokens, total, err := s.core.Repository.ListTokensByUser(ctx, userId, limit, offset)
@@ -37,24 +37,24 @@ func (s *TokensService) ListByUser(ctx context.Context, userId int, limit, offse
 	return response, nil
 }
 
-func (s *TokensService) GetByUser(ctx context.Context, id int, userId int) (*models.Token, error) {
-	s.core.Logger.Debug("Fetching token with ID: %d for userID: %d ", id, userId)
+func (s *TokenService) GetByUser(ctx context.Context, tokenID int, userID int) (*models.Token, error) {
+	s.core.Logger.Debug("Fetching token with ID: %d for userID: %d ", tokenID, userID)
 
-	token, err := s.core.Repository.GetTokenByUser(ctx, id, userId)
+	token, err := s.core.Repository.GetTokenByUser(ctx, tokenID, userID)
 	if err != nil {
 		s.core.Logger.Error("Failed to fetch token: %v", err)
 		return nil, err
 	}
 
 	if token == nil {
-		s.core.Logger.Info("Token not found with ID: %d for userID", id, userId)
+		s.core.Logger.Info("Token not found with ID: %d for userID %d", tokenID, userID)
 		return nil, ErrNotFound
 	}
 
 	return token, nil
 }
 
-func (s *TokensService) CreateTokenForUser(ctx context.Context, userID int, token *models.Token) (*models.Token, error) {
+func (s *TokenService) CreateForUser(ctx context.Context, userID int, token *models.Token) (*models.Token, error) {
 	s.core.Logger.Debug("Creating token for userId: %d", userID)
 
 	newToken := models.Token{}
@@ -67,6 +67,24 @@ func (s *TokensService) CreateTokenForUser(ctx context.Context, userID int, toke
 	}
 
 	return &newToken, nil
+}
+
+func (s *TokenService) DeleteByUser(ctx context.Context, userID int, tokenID int) error {
+	s.core.Logger.Debug("Deleting token with ID: %d for userID %d", tokenID, userID)
+
+	// Check if token exists for this user
+	_, err := s.GetByUser(ctx, userID, tokenID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.core.Repository.DeleteToken(ctx, tokenID); err != nil {
+		s.core.Logger.Error("Failed to delete token: %v", err)
+		return err
+	}
+
+	s.core.Logger.Debug("Successfully deleted token with ID: %d for userId %d", tokenID, userID)
+	return nil
 }
 
 // generateSecureTokenBase64 generates a cryptographically secure random token

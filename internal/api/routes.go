@@ -3,6 +3,13 @@ package api
 import "github.com/labstack/echo/v4"
 
 func (s *Server) routes(api *echo.Group) {
+
+	// Token routes
+	api.GET("/users/:userId/tokens", s.ListTokensByUser)
+	api.GET("/users/:userId/tokens/:tokenId", s.GetTokenByUser)
+	api.POST("/users/:userId/tokens", s.CreateTokenForUser)
+	api.DELETE("/users/:userId/tokens/:tokenId", s.DeleteTokenByUser)
+
 	// Project routes
 	api.POST("/projects", s.createProject)
 	api.GET("/projects", s.getProjects)

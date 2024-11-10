@@ -177,3 +177,7 @@ WHERE id = $1 AND user_id = $2
 INSERT INTO tokens (user_id, token)
 VALUES ($1, $2)
 RETURNING id, user_id, token, created_at, updated_at;
+
+-- name: delete-token
+DELETE FROM tokens
+WHERE id = $1

@@ -39,3 +39,11 @@ func (r *repository) CreateToken(ctx context.Context, token *models.Token) error
 
 	return nil
 }
+
+func (r *repository) DeleteToken(ctx context.Context, tokenID int) error {
+	result, err := r.queries.DeleteToken.ExecContext(ctx, tokenID)
+	if err != nil {
+		return handleDBError(err)
+	}
+	return handleRowsAffected(result)
+}

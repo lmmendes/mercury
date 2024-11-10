@@ -9,7 +9,7 @@ import (
 )
 
 // GET /users/:userId/tokens/
-func (s *Server) GetTokensByUser(c echo.Context) error {
+func (s *Server) ListTokensByUser(c echo.Context) error {
 	ctx := c.Request().Context()
 	userId, _ := strconv.Atoi(c.Param("userId"))
 
@@ -26,7 +26,7 @@ func (s *Server) GetTokensByUser(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	response, err := s.core.TokensService.ListByUser(ctx, userId, query.Limit, query.Offset)
+	response, err := s.core.TokenService.ListByUser(ctx, userId, query.Limit, query.Offset)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
@@ -51,7 +51,7 @@ func (s *Server) GetTokenByUser(c echo.Context) error {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	response, err := s.core.TokensService.GetByUser(c.Request().Context(), tokenID, userID)
+	response, err := s.core.TokenService.GetByUser(c.Request().Context(), tokenID, userID)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
@@ -72,10 +72,19 @@ func (s *Server) CreateTokenForUser(c echo.Context) error {
 	}
 
 	userId, _ := strconv.Atoi(c.Param("userId"))
-	newToken, err := s.core.TokensService.CreateTokenForUser(ctx, userId, input)
+	newToken, err := s.core.TokenService.CreateForUser(ctx, userId, input)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 
 	return c.JSON(http.StatusCreated, newToken)
+}
+
+func (s *Server) DeleteTokenByUser(c echo.Context) error {
+	userID, _ := strconv.Atoi(c.Param("userId"))
+	tokenID, _ := strconv.Atoi(c.Param("tokenId"))
+	if err := s.core.TokenService.DeleteByUser(c.Request().Context(), userID, tokenID); err != nil {
+		return s.core.HandleError(err, http.StatusInternalServerError)
+	}
+	return c.NoContent(http.StatusNoContent)
 }
