@@ -12,7 +12,7 @@ func (r *repository) ListProjects(ctx context.Context, limit, offset int) ([]*mo
 		return nil, 0, err
 	}
 
-	var projects []*models.Project
+	var projects []*models.Project = make([]*models.Project, 0)
 	err = r.queries.ListProjects.SelectContext(ctx, &projects, limit, offset)
 	if err != nil {
 		return nil, 0, err
@@ -28,7 +28,7 @@ func (r *repository) ListProjectsByUser(ctx context.Context, userID int, limit i
 		return nil, 0, err
 	}
 
-	var projects []*models.Project
+	var projects []*models.Project = make([]*models.Project, 0)
 	err = r.queries.ListProjectsByUser.SelectContext(ctx, &projects, userID, limit, offset)
 	if err != nil {
 		return nil, 0, err

@@ -1,9 +1,7 @@
-vars {
-  base_url: http://localhost:8080/api
+headers {
+  Content-Type: application/json
 }
 
-environments {
-  local {
-    base_url: http://localhost:8080/api
-  }
+vars:pre-request {
+  base_url: http://localhost:8080/
 }
