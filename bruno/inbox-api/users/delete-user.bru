@@ -1,11 +1,11 @@
 meta {
-  name: Delete Project
+  name: Delete User
   type: http
-  seq: 4
+  seq: 5
 }
 
 delete {
-  url: {{base_url}}/projects/1
+  url: {{base_url}}/users/1
   auth: none
 }
 
@@ -14,7 +14,7 @@ headers {
 }
 
 tests {
-  test("should delete project", function() {
+  test("should delete user", function() {
     expect(res.status).to.equal(204);
   });
 }
