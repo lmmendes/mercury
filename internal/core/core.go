@@ -18,6 +18,7 @@ type Core struct {
 	Logger     *logger.Logger
 	Repository storage.Repository
 
+	UserService    UserService
 	TokenService   TokenService
 	ProjectService ProjectService
 	InboxService   InboxService
@@ -39,6 +40,7 @@ func NewCore(cfg *config.Config, db *sqlx.DB) (*Core, error) {
 		Repository: repo,
 	}
 
+	core.UserService = NewUserService(core)
 	core.ProjectService = NewProjectService(core)
 	core.InboxService = NewInboxService(core)
 	core.RuleService = NewRuleService(core)
