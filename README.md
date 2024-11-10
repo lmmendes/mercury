@@ -1,10 +1,17 @@
+<p align="center">
+  <img src="frontend/public/logo.png" alt="Inbox451 Logo" width="200"/>
+</p>
+
 # Inbox451
 
 A simple email server that allows you to create inboxes and rules to filter emails, written in Go.
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/inbox451/inbox451)](https://goreportcard.com/report/github.com/inbox451/inbox451)
+[![Build Status](https://github.com/inbox451/inbox451/actions/workflows/pull-request.yml/badge.svg)](https://github.com/inbox451/inbox451/actions/workflows/pull-request.yml)
+
 ## Table of Contents
 
-- [Mercury](#mercury)
+- [Inbox451](#inbox451)
   - [Table of Contents](#table-of-contents)
   - [Features](#features)
   - [Prerequisites](#prerequisites)
@@ -14,7 +21,7 @@ A simple email server that allows you to create inboxes and rules to filter emai
     - [Using Environment Variables](#using-environment-variables)
   - [Running the Server](#running-the-server)
   - [API Examples](#api-examples)
-    - [Account Management](#account-management)
+    - [Project Management](#project-management)
     - [Inbox Management](#inbox-management)
     - [Rule Management](#rule-management)
   - [Testing Email Reception](#testing-email-reception)
@@ -142,35 +149,35 @@ go run cmd/inbox451/main.go
 
 Create an Projects:
 ```shell
-curl -X POST http://localhost:8080/projects \
+curl -X POST http://localhost:8080/api/projects \
   -H "Content-Type: application/json" \
   -d '{"name": "Test Account"}'
 ```
 
 List Projects (with pagination):
 ```shell
-curl "http://localhost:8080/projects?limit=10&offset=0"
+curl "http://localhost:8080/api/projects?limit=10&offset=0"
 ```
 
 ### Inbox Management
 
 Create an Inbox:
 ```shell
-curl -X POST http://localhost:8080/projects/1/inboxes \
+curl -X POST http://localhost:8080/api/projects/1/inboxes \
   -H "Content-Type: application/json" \
   -d '{"email": "inbox@example.com"}'
 ```
 
 List Inboxes for Account (with pagination):
 ```shell
-curl "http://localhost:8080/projects/1/inboxes?limit=10&offset=0"
+curl "http://localhost:8080/api/projects/1/inboxes?limit=10&offset=0"
 ```
 
 ### Rule Management
 
 Create a Rule:
 ```shell
-curl -X POST http://localhost:8080/project/1/inboxes/1/rules \
+curl -X POST http://localhost:8080/api/projects/1/inboxes/1/rules \
   -H "Content-Type: application/json" \
   -d '{
     "sender": "sender@example.com",
@@ -181,7 +188,7 @@ curl -X POST http://localhost:8080/project/1/inboxes/1/rules \
 
 List Rules for Inbox:
 ```shell
-curl http://localhost:8080/proejcts/1/inboxes/1/rules
+curl http://localhost:8080/api/projects/1/inboxes/1/rules
 ```
 
 ## Testing Email Reception
@@ -251,7 +258,7 @@ The project includes a comprehensive API test suite using [Bruno](https://www.us
 
 To use the Bruno collection:
 1. Install Bruno from [usebruno.com](https://www.usebruno.com/)
-2. Open the `bruno` folder in Bruno
+2. Open the `bruno/inbox-api` folder in Bruno
 3. Run requests individually or use collections
 4. Tests will automatically validate responses
 
@@ -277,7 +284,7 @@ The frontend is embedded into the Go binary using stuffbin:
 
 ```bash
 make pack-bin
-./inbox451 -config config/default.yaml
+./inbox451
 ```
 
 This creates a single binary that serves both the API and frontend assets. Visit http://localhost:8080 to access the application.
