@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Server) createInbox(c echo.Context) error {
-	projectID, _ := strconv.Atoi(c.Param("accountId"))
+	projectID, _ := strconv.Atoi(c.Param("projectId"))
 	var inbox models.Inbox
 	if err := c.Bind(&inbox); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
@@ -28,7 +28,7 @@ func (s *Server) createInbox(c echo.Context) error {
 }
 
 func (s *Server) getInboxes(c echo.Context) error {
-	accountID, _ := strconv.Atoi(c.Param("accountId"))
+	accountID, _ := strconv.Atoi(c.Param("projectId"))
 
 	var query models.PaginationQuery
 	if err := c.Bind(&query); err != nil {
@@ -64,7 +64,7 @@ func (s *Server) getInbox(c echo.Context) error {
 
 func (s *Server) updateInbox(c echo.Context) error {
 	inboxID, _ := strconv.Atoi(c.Param("inboxId"))
-	projectID, _ := strconv.Atoi(c.Param("accountId"))
+	projectID, _ := strconv.Atoi(c.Param("projectId"))
 
 	var inbox models.Inbox
 	if err := c.Bind(&inbox); err != nil {

@@ -13,9 +13,9 @@ func (s *Server) routes(api *echo.Group) {
 	// Project routes
 	api.POST("/projects", s.createProject)
 	api.GET("/projects", s.getProjects)
-	api.GET("/projects/:id", s.getProject)
-	api.PUT("/projects/:id", s.updateProject)
-	api.DELETE("/projects/:id", s.deleteProject)
+	api.GET("/projects/:projectId", s.getProject)
+	api.PUT("/projects/:projectId", s.updateProject)
+	api.DELETE("/projects/:projectId", s.deleteProject)
 
 	// Inbox routes
 	api.POST("/projects/:projectId/inboxes", s.createInbox)

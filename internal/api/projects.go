@@ -51,8 +51,8 @@ func (s *Server) getProjects(c echo.Context) error {
 }
 
 func (s *Server) getProject(c echo.Context) error {
-	id, _ := strconv.Atoi(c.Param("id"))
-	project, err := s.core.ProjectService.Get(c.Request().Context(), id)
+	projectID, _ := strconv.Atoi(c.Param("projectId"))
+	project, err := s.core.ProjectService.Get(c.Request().Context(), projectID)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
@@ -63,12 +63,12 @@ func (s *Server) getProject(c echo.Context) error {
 }
 
 func (s *Server) updateProject(c echo.Context) error {
-	id, _ := strconv.Atoi(c.Param("id"))
+	projectID, _ := strconv.Atoi(c.Param("projectId"))
 	var project models.Project
 	if err := c.Bind(&project); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
-	project.ID = id
+	project.ID = projectID
 
 	if err := c.Validate(&project); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
@@ -82,8 +82,8 @@ func (s *Server) updateProject(c echo.Context) error {
 }
 
 func (s *Server) deleteProject(c echo.Context) error {
-	id, _ := strconv.Atoi(c.Param("id"))
-	if err := s.core.ProjectService.Delete(c.Request().Context(), id); err != nil {
+	projectID, _ := strconv.Atoi(c.Param("projectID"))
+	if err := s.core.ProjectService.Delete(c.Request().Context(), projectID); err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	return c.NoContent(http.StatusNoContent)
