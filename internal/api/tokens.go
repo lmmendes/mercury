@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
+	"github.com/volatiletech/null/v9"
 )
 
 // GET /users/:userId/tokens/
@@ -62,17 +63,31 @@ func (s *Server) GetTokenByUser(c echo.Context) error {
 func (s *Server) CreateTokenForUser(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	input := new(models.Token)
+	// Get user ID from URL
+	userID, _ := strconv.Atoi(c.Param("userId"))
+
+	// Token Input DTO
+	type TokenInput struct {
+		Name      string    `json:"name" validate:"required"`
+		ExpiresAt null.Time `json:"expires_at"`
+	}
+
+	input := new(TokenInput)
 	if err := c.Bind(input); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	if err := c.Validate(&input); err != nil {
+	if err := c.Validate(input); err != nil {
 		return s.core.HandleError(err, http.StatusBadRequest)
 	}
 
-	userId, _ := strconv.Atoi(c.Param("userId"))
-	newToken, err := s.core.TokenService.CreateForUser(ctx, userId, input)
+	token := &models.Token{
+		UserID:    userID,
+		Name:      input.Name,
+		ExpiresAt: input.ExpiresAt,
+	}
+
+	newToken, err := s.core.TokenService.CreateForUser(ctx, userID, token)
 	if err != nil {
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}

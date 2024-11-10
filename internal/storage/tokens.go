@@ -30,8 +30,21 @@ func (r *repository) GetTokenByUser(ctx context.Context, token_id int, user_id i
 }
 
 func (r *repository) CreateToken(ctx context.Context, token *models.Token) error {
-	err := r.queries.CreateInbox.QueryRowContext(ctx, token.UserID, token.Token).
-		Scan(&token.ID, &token.UserID, &token.CreatedAt, &token.UpdatedAt)
+	err := r.queries.CreateToken.QueryRowContext(
+		ctx,
+		token.UserID,
+		token.Token,
+		token.Name,
+		token.ExpiresAt,
+	).Scan(
+		&token.ID,
+		&token.UserID,
+		&token.Token,
+		&token.Name,
+		&token.ExpiresAt,
+		&token.CreatedAt,
+		&token.UpdatedAt,
+	)
 
 	if err != nil {
 		return handleDBError(err)

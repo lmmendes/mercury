@@ -1,0 +1,33 @@
+meta {
+  name: Update User
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{base_url}}/users/1
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "name": "Updated John Doe",
+    "username": "johndoe",
+    "email": "john.updated@example.com",
+    "status": "active",
+    "role": "admin",
+    "password_login": true
+  }
+}
+
+tests {
+  test("should update user", function() {
+    expect(res.status).to.equal(204);
+  });
+}

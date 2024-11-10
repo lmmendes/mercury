@@ -60,6 +60,7 @@ type Queries struct {
 	CountTokensByUser *sqlx.Stmt `query:"count-tokens-by-user"`
 	GetTokenByUser    *sqlx.Stmt `query:"get-token-by-user"`
 	DeleteToken       *sqlx.Stmt `query:"delete-token"`
+	CreateToken       *sqlx.Stmt `query:"create-token"`
 }
 
 func PrepareQueries(db *sqlx.DB) (*Queries, error) {

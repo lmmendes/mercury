@@ -1,0 +1,28 @@
+meta {
+  name: Update Project
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{base_url}}/projects/1
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "name": "Updated Project Name"
+  }
+}
+
+tests {
+  test("should update project", function() {
+    expect(res.status).to.equal(204);
+  });
+}
