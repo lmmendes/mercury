@@ -172,7 +172,7 @@ WHERE username = $1;
 -- -------------------------------------------
 
 -- name: list-tokens-by-user
-SELECT id, user_id, created_at, updated_at
+SELECT id, user_id, token, name, expires_at, created_at, updated_at
 FROM tokens
 WHERE user_id = $1
 ORDER BY id
@@ -184,14 +184,14 @@ FROM tokens
 WHERE user_id = $1;
 
 -- name: get-token-by-user
-SELECT id, user_id, created_at, updated_at
+SELECT id, user_id, token, name, expires_at, created_at, updated_at
 FROM tokens
 WHERE id = $1 AND user_id = $2
 
 -- name: create-token
 INSERT INTO tokens (user_id, token, name, expires_at)
 VALUES ($1, $2, $3, $4)
-RETURNING id, user_id, token, created_at, updated_at;
+RETURNING id, user_id, token, name, expires_at, created_at, updated_at;
 
 -- name: delete-token
 DELETE FROM tokens

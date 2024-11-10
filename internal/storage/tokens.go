@@ -40,6 +40,8 @@ func (r *repository) CreateToken(ctx context.Context, token *models.Token) error
 		&token.ID,
 		&token.UserID,
 		&token.Token,
+		&token.Name,
+		&token.ExpiresAt,
 		&token.CreatedAt,
 		&token.UpdatedAt,
 	)

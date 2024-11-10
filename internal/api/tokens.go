@@ -82,7 +82,9 @@ func (s *Server) CreateTokenForUser(c echo.Context) error {
 	}
 
 	token := &models.Token{
-		UserID: userID,
+		UserID:    userID,
+		Name:      input.Name,
+		ExpiresAt: input.ExpiresAt,
 	}
 
 	newToken, err := s.core.TokenService.CreateForUser(ctx, userID, token)
