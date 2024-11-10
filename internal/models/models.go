@@ -44,8 +44,10 @@ type ProjectUser struct {
 
 type Token struct {
 	Base
-	UserID int    `json:"user_id" db:"user_id" validate:"required"`
-	Token  string `json:"-" db:"token" validate:"required"`
+	UserID    int       `json:"user_id" db:"user_id" validate:"required"`
+	Token     string    `json:"token" db:"token" validate:"required"`
+	Name      string    `json:"name" db:"name" validate:"required"`
+	ExpiresAt null.Time `json:"expires_at" db:"expires_at"`
 }
 
 type ForwardRule struct {

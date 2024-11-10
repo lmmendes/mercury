@@ -189,8 +189,8 @@ FROM tokens
 WHERE id = $1 AND user_id = $2
 
 -- name: create-token
-INSERT INTO tokens (user_id, token)
-VALUES ($1, $2)
+INSERT INTO tokens (user_id, token, name, expires_at)
+VALUES ($1, $2, $3, $4)
 RETURNING id, user_id, token, created_at, updated_at;
 
 -- name: delete-token
