@@ -9,20 +9,18 @@ ORDER BY id
 LIMIT $1 OFFSET $2;
 
 -- name: list-projects-by-user
-SELECT id, name, created_at, updated_at
+SELECT projects.id, projects.name, projects.created_at, projects.updated_at
 FROM projects
-INNER JOIN user_projects ON projects.id = user_projects.project_id
-WHERE user_projects.user_id = $1
-ORDER BY id
+INNER JOIN project_users ON projects.id = project_users.project_id
+WHERE project_users.user_id = $1
+ORDER BY projects.id
 LIMIT $2 OFFSET $3;
 
 -- name: count-projects-by-user
-SELECT COUNT(*)
+SELECT COUNT(DISTINCT(projects.id))
 FROM projects
-INNER JOIN user_projects ON projects.id = user_projects.project_id
-WHERE user_projects.user_id = $1
-ORDER BY id
-LIMIT $2 OFFSET $3;
+INNER JOIN project_users ON projects.id = project_users.project_id
+WHERE project_users.user_id = $1;
 
 -- name: get-project
 SELECT id, name, created_at, updated_at
@@ -51,12 +49,12 @@ SELECT COUNT(*) FROM projects;
 -- -------------------------------------------
 
 -- name: add-user-to-project
-INSERT INTO user_projects (user_id, project_id, role)
+INSERT INTO project_users (user_id, project_id, role)
 VALUES ($1, $2, $3)
 RETURNING created_at, updated_at;
 
 -- name: remove-user-from-project
-DELETE FROM user_projects
+DELETE FROM project_users
 WHERE user_id = $1 AND project_id = $2;
 
 --- ------------------------------------------
