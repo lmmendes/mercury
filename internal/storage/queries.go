@@ -14,12 +14,14 @@ var queriesFS embed.FS
 
 type Queries struct {
 	// Project queries
-	CreateProject *sqlx.Stmt `query:"create-project"`
-	GetProject    *sqlx.Stmt `query:"get-project"`
-	UpdateProject *sqlx.Stmt `query:"update-project"`
-	DeleteProject *sqlx.Stmt `query:"delete-project"`
-	ListProjects  *sqlx.Stmt `query:"list-projects"`
-	CountProjects *sqlx.Stmt `query:"count-projects"`
+	ListProjects        *sqlx.Stmt `query:"list-projects"`
+	CountProjects       *sqlx.Stmt `query:"count-projects"`
+	ListProjectsByUser  *sqlx.Stmt `query:"list-projects-by-user"`
+	CountProjectsByUser *sqlx.Stmt `query:"count-projects-by-user"`
+	GetProject          *sqlx.Stmt `query:"get-project"`
+	CreateProject       *sqlx.Stmt `query:"create-project"`
+	UpdateProject       *sqlx.Stmt `query:"update-project"`
+	DeleteProject       *sqlx.Stmt `query:"delete-project"`
 
 	// Inbox queries
 	CreateInbox           *sqlx.Stmt `query:"create-inbox"`

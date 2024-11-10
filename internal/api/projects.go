@@ -50,6 +50,30 @@ func (s *Server) getProjects(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+func (s *Server) getProjectsByUser(c echo.Context) error {
+	ctx := c.Request().Context()
+	userID, _ := strconv.Atoi(c.Param("userId"))
+
+	var query models.PaginationQuery
+	if err := c.Bind(&query); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
+
+	if query.Limit == 0 {
+		query.Limit = 10
+	}
+
+	if err := c.Validate(&query); err != nil {
+		return s.core.HandleError(err, http.StatusBadRequest)
+	}
+
+	response, err := s.core.ProjectService.ListByUser(ctx, userID, query.Limit, query.Offset)
+	if err != nil {
+		return s.core.HandleError(err, http.StatusInternalServerError)
+	}
+	return c.JSON(http.StatusOK, response)
+}
+
 func (s *Server) getProject(c echo.Context) error {
 	projectID, _ := strconv.Atoi(c.Param("projectId"))
 	project, err := s.core.ProjectService.Get(c.Request().Context(), projectID)

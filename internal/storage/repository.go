@@ -11,32 +11,33 @@ import (
 
 type Repository interface {
 	// Project operations
-	CreateProject(ctx context.Context, project *models.Project) error
+	ListProjects(ctx context.Context, limit, offset int) ([]*models.Project, int, error)
+	ListProjectsByUser(ctx context.Context, userID int, limit, offset int) ([]*models.Project, int, error)
 	GetProject(ctx context.Context, id int) (*models.Project, error)
+	CreateProject(ctx context.Context, project *models.Project) error
 	UpdateProject(ctx context.Context, project *models.Project) error
 	DeleteProject(ctx context.Context, id int) error
-	ListProjects(ctx context.Context, limit, offset int) ([]*models.Project, int, error)
 
 	// Inbox operations
-	CreateInbox(ctx context.Context, inbox *models.Inbox) error
+	ListInboxesByProject(ctx context.Context, projectID, limit, offset int) ([]*models.Inbox, int, error)
 	GetInbox(ctx context.Context, id int) (*models.Inbox, error)
+	CreateInbox(ctx context.Context, inbox *models.Inbox) error
 	UpdateInbox(ctx context.Context, inbox *models.Inbox) error
 	DeleteInbox(ctx context.Context, id int) error
-	ListInboxesByProject(ctx context.Context, projectID, limit, offset int) ([]*models.Inbox, int, error)
 
 	// Rule operations
-	CreateRule(ctx context.Context, rule *models.ForwardRule) error
+	ListRulesByInbox(ctx context.Context, inboxID, limit, offset int) ([]*models.ForwardRule, int, error)
 	GetRule(ctx context.Context, id int) (*models.ForwardRule, error)
+	CreateRule(ctx context.Context, rule *models.ForwardRule) error
 	UpdateRule(ctx context.Context, rule *models.ForwardRule) error
 	DeleteRule(ctx context.Context, id int) error
-	ListRulesByInbox(ctx context.Context, inboxID, limit, offset int) ([]*models.ForwardRule, int, error)
 
 	// Message operations
-	CreateMessage(ctx context.Context, message *models.Message) error
-	GetMessage(ctx context.Context, id int) (*models.Message, error)
-	ListMessagesByInbox(ctx context.Context, inboxID, limit, offset int) ([]*models.Message, int, error)
 	ListRules(ctx context.Context, limit, offset int) ([]*models.ForwardRule, int, error)
 	GetInboxByEmail(ctx context.Context, email string) (*models.Inbox, error)
+	GetMessage(ctx context.Context, id int) (*models.Message, error)
+	CreateMessage(ctx context.Context, message *models.Message) error
+	ListMessagesByInbox(ctx context.Context, inboxID, limit, offset int) ([]*models.Message, int, error)
 
 	// User operations
 	ListUsers(ctx context.Context, limit, offset int) ([]*models.User, int, error)

@@ -1,12 +1,38 @@
--- name: create-project
-INSERT INTO projects (name, created_at, updated_at)
-VALUES ($1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-RETURNING id, created_at, updated_at;
+--- ------------------------------------------
+-- Users
+-- -------------------------------------------
+
+-- name: list-projects
+SELECT id, name, created_at, updated_at
+FROM projects
+ORDER BY id
+LIMIT $1 OFFSET $2;
+
+-- name: list-projects-by-user
+SELECT id, name, created_at, updated_at
+FROM projects
+INNER JOIN user_projects ON projects.id = user_projects.project_id
+WHERE user_projects.user_id = $1
+ORDER BY id
+LIMIT $2 OFFSET $3;
+
+-- name: count-projects-by-user
+SELECT COUNT(*)
+FROM projects
+INNER JOIN user_projects ON projects.id = user_projects.project_id
+WHERE user_projects.user_id = $1
+ORDER BY id
+LIMIT $2 OFFSET $3;
 
 -- name: get-project
 SELECT id, name, created_at, updated_at
 FROM projects
 WHERE id = $1;
+
+-- name: create-project
+INSERT INTO projects (name, created_at, updated_at)
+VALUES ($1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+RETURNING id, created_at, updated_at;
 
 -- name: update-project
 UPDATE projects
@@ -17,14 +43,12 @@ RETURNING updated_at;
 -- name: delete-project
 DELETE FROM projects WHERE id = $1;
 
--- name: list-projects
-SELECT id, name, created_at, updated_at
-FROM projects
-ORDER BY id
-LIMIT $1 OFFSET $2;
-
 -- name: count-projects
 SELECT COUNT(*) FROM projects;
+
+--- ------------------------------------------
+-- Inboxes
+-- -------------------------------------------
 
 -- name: create-inbox
 INSERT INTO inboxes (project_id, email, created_at, updated_at)
@@ -60,6 +84,10 @@ WHERE project_id = $1;
 SELECT id, project_id, email, created_at, updated_at
 FROM inboxes
 WHERE email = $1;
+
+--- ------------------------------------------
+-- Rules
+-- -------------------------------------------
 
 -- name: create-rule
 INSERT INTO forward_rules (inbox_id, sender, receiver, subject, created_at, updated_at)
@@ -100,6 +128,10 @@ LIMIT $1 OFFSET $2;
 -- name: count-rules
 SELECT COUNT(*) FROM forward_rules;
 
+--- ------------------------------------------
+-- Messages
+-- -------------------------------------------
+
 -- name: create-message
 INSERT INTO messages (inbox_id, sender, receiver, subject, body, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -134,7 +166,7 @@ ORDER BY id
 LIMIT $1 OFFSET $2;
 
 -- name: count-users
-SELECT COUNT(1)
+SELECT COUNT(*)
 FROM users
 
 -- name: create-user

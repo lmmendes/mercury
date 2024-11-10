@@ -10,6 +10,7 @@ func (s *Server) routes(api *echo.Group) {
 	api.GET("/users/:userId", s.getUser)
 	api.PUT("/users/:userId", s.updateUser)
 	api.DELETE("/users/:userId", s.deleteUser)
+	api.GET("/users/:userId/projects", s.getProjectsByUser)
 
 	// Token routes
 	api.GET("/users/:userId/tokens", s.ListTokensByUser)

@@ -13,16 +13,48 @@ func NewProjectService(core *Core) ProjectService {
 	return ProjectService{core: core}
 }
 
-func (s *ProjectService) Create(ctx context.Context, project *models.Project) error {
-	s.core.Logger.Info("Creating new project: %s", project.Name)
+func (s *ProjectService) List(ctx context.Context, limit, offset int) (*models.PaginatedResponse, error) {
+	s.core.Logger.Debug("Listing projects with limit: %d and offset: %d", limit, offset)
 
-	if err := s.core.Repository.CreateProject(ctx, project); err != nil {
-		s.core.Logger.Error("Failed to create project: %v", err)
-		return err
+	projects, total, err := s.core.Repository.ListProjects(ctx, limit, offset)
+	if err != nil {
+		s.core.Logger.Error("Failed to list projects: %v", err)
+		return nil, err
 	}
 
-	s.core.Logger.Info("Successfully created project with ID: %d", project.ID)
-	return nil
+	response := &models.PaginatedResponse{
+		Data: projects,
+		Pagination: models.Pagination{
+			Total:  total,
+			Limit:  limit,
+			Offset: offset,
+		},
+	}
+
+	s.core.Logger.Debug("Successfully retrieved %d projects (total: %d)", len(projects), total)
+	return response, nil
+}
+
+func (s *ProjectService) ListByUser(ctx context.Context, userID int, limit, offset int) (*models.PaginatedResponse, error) {
+	s.core.Logger.Debug("Listing projects with limit: %d and offset: %d for user %d", limit, offset, userID)
+
+	projects, total, err := s.core.Repository.ListProjectsByUser(ctx, userID, limit, offset)
+	if err != nil {
+		s.core.Logger.Error("Failed to list projects: %v", err)
+		return nil, err
+	}
+
+	response := &models.PaginatedResponse{
+		Data: projects,
+		Pagination: models.Pagination{
+			Total:  total,
+			Limit:  limit,
+			Offset: offset,
+		},
+	}
+
+	s.core.Logger.Debug("Successfully retrieved %d projects (total: %d) for user %d", len(projects), total, userID)
+	return response, nil
 }
 
 func (s *ProjectService) Get(ctx context.Context, id int) (*models.Project, error) {
@@ -40,6 +72,18 @@ func (s *ProjectService) Get(ctx context.Context, id int) (*models.Project, erro
 	}
 
 	return project, nil
+}
+
+func (s *ProjectService) Create(ctx context.Context, project *models.Project) error {
+	s.core.Logger.Info("Creating new project: %s", project.Name)
+
+	if err := s.core.Repository.CreateProject(ctx, project); err != nil {
+		s.core.Logger.Error("Failed to create project: %v", err)
+		return err
+	}
+
+	s.core.Logger.Info("Successfully created project with ID: %d", project.ID)
+	return nil
 }
 
 func (s *ProjectService) Update(ctx context.Context, project *models.Project) error {
@@ -64,24 +108,4 @@ func (s *ProjectService) Delete(ctx context.Context, id int) error {
 
 	s.core.Logger.Info("Successfully deleted project with ID: %d", id)
 	return nil
-}
-
-func (s *ProjectService) List(ctx context.Context, limit, offset int) (*models.PaginatedResponse, error) {
-	s.core.Logger.Info("Listing projects with limit: %d and offset: %d", limit, offset)
-
-	projects, total, err := s.core.Repository.ListProjects(ctx, limit, offset)
-	if err != nil {
-		s.core.Logger.Error("Failed to list projects: %v", err)
-		return nil, err
-	}
-
-	response := &models.PaginatedResponse{
-		Data: projects,
-	}
-	response.Pagination.Total = total
-	response.Pagination.Limit = limit
-	response.Pagination.Offset = offset
-
-	s.core.Logger.Info("Successfully retrieved %d projects (total: %d)", len(projects), total)
-	return response, nil
 }
