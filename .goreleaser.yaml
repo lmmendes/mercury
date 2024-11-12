@@ -35,7 +35,6 @@ archives:
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}
     files:
-      - config.yml
       - README.md
       - LICENSE*
 
@@ -51,22 +50,6 @@ dockers:
       - "--label=org.opencontainers.image.title={{.ProjectName}}"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - "--label=org.opencontainers.image.version={{.Version}}"
-    extra_files:
-      - config.yml
-
-  - image_templates:
-      - "ghcr.io/inbox451/inbox451:{{ .Version }}-arm64v8"
-      - "ghcr.io/inbox451/inbox451:latest-arm64v8"
-    dockerfile: Dockerfile
-    use: buildx
-    build_flag_templates:
-      - "--platform=linux/arm64/v8"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-    extra_files:
-      - config.yml
 
 docker_manifests:
   - name_template: ghcr.io/inbox451/inbox451:{{ .Version }}

@@ -97,10 +97,11 @@ make test
 
 ## Configuration
 
-The application can be configured using:
-- YAML configuration file (default: `config/default.yaml`)
-- Environment variables
-- Command line flags
+The application can be configured in multiple ways (in order of precedence):
+
+1. Environment variables (highest precedence)
+2. Configuration file (if provided)
+3. Default values (lowest precedence)
 
 ### Using Config File
 
