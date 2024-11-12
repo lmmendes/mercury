@@ -1,0 +1,24 @@
+meta {
+  name: Health Check
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/health
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+tests {
+  test("should return 200 OK with health status", function() {
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property('status').that.equals('ok');
+    expect(res.body).to.have.property('version').that.is.a('string');
+    expect(res.body).to.have.property('commitSha').that.is.a('string');
+  });
+}
