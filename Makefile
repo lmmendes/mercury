@@ -1,7 +1,13 @@
 # Version information
 LAST_COMMIT := $(or $(shell git rev-parse --short HEAD 2> /dev/null),"unknown")
 VERSION := $(or $(shell git describe --tags --abbrev=0 2> /dev/null),"v0.0.0")
-BUILDSTR := ${VERSION} (\#${LAST_COMMIT} $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
+BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%S%z")
+
+# Build flags
+LD_FLAGS := -s -w \
+	-X 'main.version=${VERSION}' \
+	-X 'main.commit=${LAST_COMMIT}' \
+	-X 'main.date=${BUILD_DATE}'
 
 # Tool configurations
 GOPATH ?= $(shell go env GOPATH)
@@ -38,7 +44,7 @@ FRONTEND_DEPS = \
 
 # Start development server
 dev: db-up db-init
-	CGO_ENABLED=0 $(GO) run -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}' -X 'main.frontendDir=frontend/dist'" cmd/*.go
+	CGO_ENABLED=0 $(GO) run -ldflags="${LD_FLAGS}" cmd/*.go
 
 # Install all dependencies
 deps: $(STUFFBIN)
@@ -94,15 +100,15 @@ db-reset: db-clean db-up db-init
 
 # Initialize database
 db-init:
-	@CGO_ENABLED=0 $(GO) run -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}'" cmd/*.go --install --yes --idempotent || true
+	@CGO_ENABLED=0 $(GO) run -ldflags="${LD_FLAGS}" cmd/*.go --install --yes --idempotent || true
 
 # Install database schema
 db-install:
-	CGO_ENABLED=0 $(GO) run -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}'" cmd/*.go --install --yes
+	CGO_ENABLED=0 $(GO) run -ldflags="${LD_FLAGS}" cmd/*.go --install --yes
 
 # Upgrade database schema
 db-upgrade:
-	CGO_ENABLED=0 $(GO) run -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}'" cmd/*.go --upgrade --yes
+	CGO_ENABLED=0 $(GO) run -ldflags="${LD_FLAGS}" cmd/*.go --upgrade --yes
 
 # ==================================================================================== #
 # BUILD
@@ -114,7 +120,7 @@ $(STUFFBIN):
 
 # Build the backend
 build:
-	CGO_ENABLED=0 go build -o ${BIN} -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}'" cmd/*.go
+	CGO_ENABLED=0 $(GO) build -o ${BIN} -ldflags="${LD_FLAGS}" cmd/*.go
 
 # Production build with embedded frontend
 pack-bin: $(STUFFBIN) build build-frontend

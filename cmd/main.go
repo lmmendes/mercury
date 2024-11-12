@@ -25,7 +25,10 @@ import (
 )
 
 var (
-	logger = log.New(os.Stderr, "", 0)
+	logger  = log.New(os.Stderr, "", 0)
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 func initDB(cfg *config.Config) (*sqlx.DB, error) {
@@ -216,11 +219,14 @@ func main() {
 	checkUpgrade(db)
 
 	// Create core
-	core, err := core.NewCore(cfg, db)
+	core, err := core.NewCore(cfg, db, version, commit, date)
 	if err != nil {
 		fmt.Printf("Failed to create core: %v\n", err)
 		os.Exit(1)
 	}
+
+	// Log version information at startup
+	core.Logger.Info("Starting inbox451 version %s (commit: %s, built: %s)", version, commit, date)
 
 	// Start all servers
 	if err := startServers(core); err != nil {
