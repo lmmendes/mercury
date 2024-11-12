@@ -8,7 +8,7 @@ WORKDIR /inbox451
 
 # Copy binary and config
 COPY --chown=nonroot:nonroot inbox451 .
-COPY --chown=nonroot:nonroot config.yml.sample config.yml
+COPY --chown=nonroot:nonroot config.yml .
 
 # 8080: HTTP API
 # 1025: SMTP Server
