@@ -7,14 +7,27 @@ import (
 	"inbox451/internal/models"
 )
 
+// TokenService handles operations related to API tokens
 type TokenService struct {
 	core *Core
 }
 
+// NewTokensService creates a new TokenService instance
 func NewTokensService(core *Core) TokenService {
 	return TokenService{core: core}
 }
 
+// ListByUser retrieves a paginated list of tokens for a given user
+//
+// Parameters:
+//   - ctx: Context for the request
+//   - userId: ID of the user to list tokens for
+//   - limit: Maximum number of tokens to return
+//   - offset: Number of tokens to skip
+//
+// Returns:
+//   - *models.PaginatedResponse containing the tokens and pagination info
+//   - error if the operation fails
 func (s *TokenService) ListByUser(ctx context.Context, userId int, limit, offset int) (*models.PaginatedResponse, error) {
 	s.core.Logger.Info("Listing tokens for userId %d with limit: %d and offset: %d", userId, limit, offset)
 
@@ -37,6 +50,17 @@ func (s *TokenService) ListByUser(ctx context.Context, userId int, limit, offset
 	return response, nil
 }
 
+// GetByUser retrieves a specific token for a user
+//
+// Parameters:
+//   - ctx: Context for the request
+//   - tokenID: ID of the token to retrieve
+//   - userID: ID of the user who owns the token
+//
+// Returns:
+//   - *models.Token if found
+//   - ErrNotFound if token doesn't exist
+//   - error if the operation fails
 func (s *TokenService) GetByUser(ctx context.Context, tokenID int, userID int) (*models.Token, error) {
 	s.core.Logger.Debug("Fetching token with ID: %d for userID: %d ", tokenID, userID)
 
@@ -54,6 +78,16 @@ func (s *TokenService) GetByUser(ctx context.Context, tokenID int, userID int) (
 	return token, nil
 }
 
+// CreateForUser creates a new API token for a user
+//
+// Parameters:
+//   - ctx: Context for the request
+//   - userID: ID of the user to create token for
+//   - tokenData: Optional token configuration including name and expiration
+//
+// Returns:
+//   - *models.Token containing the newly created token
+//   - error if the operation fails
 func (s *TokenService) CreateForUser(ctx context.Context, userID int, tokenData *models.Token) (*models.Token, error) {
 	s.core.Logger.Debug("Creating token for userId: %d", userID)
 
@@ -87,6 +121,15 @@ func (s *TokenService) CreateForUser(ctx context.Context, userID int, tokenData 
 	return &newToken, nil
 }
 
+// DeleteByUser deletes a specific token belonging to a user
+//
+// Parameters:
+//   - ctx: Context for the request
+//   - userID: ID of the user who owns the token
+//   - tokenID: ID of the token to delete
+//
+// Returns:
+//   - error if the operation fails or token doesn't exist
 func (s *TokenService) DeleteByUser(ctx context.Context, userID int, tokenID int) error {
 	s.core.Logger.Debug("Deleting token with ID: %d for userID %d", tokenID, userID)
 
@@ -105,21 +148,18 @@ func (s *TokenService) DeleteByUser(ctx context.Context, userID int, tokenID int
 	return nil
 }
 
-/*
-	generateSecureTokenBase64 generates a cryptographically secure random token
-
-encoded in URL-safe base64. It returns a string of approximately 43 characters
-(for 32 bytes of entropy) that is safe for use in URLs and file names.
-
-The generated token uses the following format:
-  - 32 bytes of random data from crypto/rand
-  - URL-safe base64 encoding
-  - No padding characters
-
-Example output: "xJ_dwq8k-rLp5xGhq2d4mNvKzHjY3bWl1fTnM9iR0oE"
-
-If the random number generator fails, it returns an empty string and an error.
-*/
+// generateSecureTokenBase64 generates a cryptographically secure random token
+// encoded in URL-safe base64. It returns a string of approximately 43 characters
+// (for 32 bytes of entropy) that is safe for use in URLs and file names.
+//
+// The generated token uses the following format:
+//   - 32 bytes of random data from crypto/rand
+//   - URL-safe base64 encoding
+//   - No padding characters
+//
+// Example output: "xJ_dwq8k-rLp5xGhq2d4mNvKzHjY3bWl1fTnM9iR0oE"
+//
+// If the random number generator fails, it returns an empty string and an error.
 func generateSecureTokenBase64() (string, error) {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
