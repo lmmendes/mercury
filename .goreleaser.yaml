@@ -1,0 +1,95 @@
+version: 2
+
+project_name: inbox451
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    main: ./cmd
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+    hooks:
+      post:
+        - cmd: make pack-bin
+          env:
+            - BIN={{ .Path }}
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+    files:
+      - config/default.yaml
+      - README.md
+      - LICENSE*
+
+dockers:
+  - image_templates:
+      - "ghcr.io/inbox451/inbox451:{{ .Version }}-amd64"
+      - "ghcr.io/inbox451/inbox451:latest-amd64"
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    extra_files:
+      - config.yml
+
+  - image_templates:
+      - "ghcr.io/inbox451/inbox451:{{ .Version }}-arm64v8"
+      - "ghcr.io/inbox451/inbox451:latest-arm64v8"
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/arm64/v8"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    extra_files:
+      - config.yml
+
+docker_manifests:
+  - name_template: ghcr.io/inbox451/inbox451:{{ .Version }}
+    image_templates:
+      - ghcr.io/inbox451/inbox451:{{ .Version }}-amd64
+      - ghcr.io/inbox451/inbox451:{{ .Version }}-arm64v8
+
+  - name_template: ghcr.io/inbox451/inbox451:latest
+    image_templates:
+      - ghcr.io/inbox451/inbox451:latest-amd64
+      - ghcr.io/inbox451/inbox451:latest-arm64v8
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-SNAPSHOT-{{.ShortCommit}}"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - Merge pull request
