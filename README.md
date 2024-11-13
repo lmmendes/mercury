@@ -38,6 +38,8 @@ A simple email server that allows you to create inboxes and rules to filter emai
     - [Docker Images](#docker-images)
     - [Testing Releases](#testing-releases)
     - [Available Artifacts](#available-artifacts)
+  - [Contributing](#contributing)
+  - [License](#license)
 
 ## Features
 
@@ -347,3 +349,22 @@ Each release provides:
 - Docker images:
   - `ghcr.io/inbox451/inbox451:v1.0.0`
   - `ghcr.io/inbox451/inbox451:latest`
+
+## Contribute
+
+**Use issues for everything**
+
+- For a small change, just send a PR.
+- For bigger changes open an issue for discussion before sending a PR.
+- PR should have:
+  - Test case
+  - Documentation
+  - Example (If it makes sense)
+- You can also contribute by:
+  - Reporting issues
+  - Suggesting new features or enhancements
+  - Improve/fix documentation
+
+## License
+
+[MIT](https://github.com/inbox451/inbox451/blob/master/LICENSE)
