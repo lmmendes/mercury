@@ -17,6 +17,9 @@ type Core struct {
 	Config     *config.Config
 	Logger     *logger.Logger
 	Repository storage.Repository
+	Version    string
+	Commit     string
+	BuildDate  string
 
 	UserService    UserService
 	TokenService   TokenService
@@ -26,7 +29,7 @@ type Core struct {
 	MessageService MessageService
 }
 
-func NewCore(cfg *config.Config, db *sqlx.DB) (*Core, error) {
+func NewCore(cfg *config.Config, db *sqlx.DB, version, commit, date string) (*Core, error) {
 	baseLogger := logger.New(os.Stdout, cfg.Logging.Level)
 
 	repo, err := storage.NewRepository(db)
@@ -38,6 +41,9 @@ func NewCore(cfg *config.Config, db *sqlx.DB) (*Core, error) {
 		Config:     cfg,
 		Logger:     baseLogger,
 		Repository: repo,
+		Version:    version,
+		Commit:     commit,
+		BuildDate:  date,
 	}
 
 	core.UserService = NewUserService(core)

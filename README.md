@@ -8,6 +8,7 @@ A simple email server that allows you to create inboxes and rules to filter emai
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/inbox451/inbox451)](https://goreportcard.com/report/github.com/inbox451/inbox451)
 [![Build Status](https://github.com/inbox451/inbox451/actions/workflows/pull-request.yml/badge.svg)](https://github.com/inbox451/inbox451/actions/workflows/pull-request.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Table of Contents
 
@@ -32,6 +33,11 @@ A simple email server that allows you to create inboxes and rules to filter emai
     - [Development Mode](#development-mode)
     - [Production Build](#production-build)
   - [Architecture](#architecture)
+  - [Release Process](#release-process)
+    - [Creating a Release](#creating-a-release)
+    - [Docker Images](#docker-images)
+    - [Testing Releases](#testing-releases)
+    - [Available Artifacts](#available-artifacts)
 
 ## Features
 
@@ -92,10 +98,11 @@ make test
 
 ## Configuration
 
-The application can be configured using:
-- YAML configuration file (default: `config/default.yaml`)
-- Environment variables
-- Command line flags
+The application can be configured in multiple ways (in order of precedence):
+
+1. Environment variables (highest precedence)
+2. Configuration file (if provided)
+3. Default values (lowest precedence)
 
 ### Using Config File
 
@@ -297,3 +304,46 @@ The application follows a layered architecture:
 - Storage Layer: Database operations
 
 Database schema is inspired by [Archiveopteryx](https://archiveopteryx.org/db/)
+
+## Release Process
+
+This project uses [GoReleaser](https://goreleaser.com/) to automate the release process.
+
+### Creating a Release
+
+Create and push a new release:
+```bash
+make release-tag VERSION=v1.0.0
+```
+
+This triggers an automated process that:
+1. Builds binaries for Linux and macOS (amd64/arm64)
+2. Creates Docker images for multiple architectures
+3. Publishes everything to GitHub
+
+### Docker Images
+
+Run the latest image:
+```bash
+docker run ghcr.io/inbox451/inbox451:latest
+```
+
+Run the latest image with your own config:
+```bash
+docker run -v $(pwd)/config.yaml:/inbox451/config.yaml ghcr.io/inbox451/inbox451:latest
+```
+
+### Testing Releases
+
+Test locally without publishing:
+```bash
+make release-dry-run
+```
+
+### Available Artifacts
+
+Each release provides:
+- Binary downloads for Linux and macOS
+- Docker images:
+  - `ghcr.io/inbox451/inbox451:v1.0.0`
+  - `ghcr.io/inbox451/inbox451:latest`
