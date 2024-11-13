@@ -323,9 +323,14 @@ This triggers an automated process that:
 
 ### Docker Images
 
-Run using environment variables (recommended):
+Run the latest image:
 ```bash
 docker run ghcr.io/inbox451/inbox451:latest
+```
+
+Run the latest image with your own config:
+```bash
+docker run -v $(pwd)/config.yaml:/inbox451/config.yaml ghcr.io/inbox451/inbox451:latest
 ```
 
 ### Testing Releases
