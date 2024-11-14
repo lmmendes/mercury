@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"inbox451/internal/config"
-	"inbox451/internal/migrations"
 	"log"
 	"strings"
+
+	"inbox451/internal/config"
+	"inbox451/internal/migrations"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"

@@ -3,8 +3,9 @@ package imap
 import (
 	"context"
 	"errors"
-	"inbox451/internal/core"
 	"time"
+
+	"inbox451/internal/core"
 
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/backend"

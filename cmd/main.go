@@ -175,7 +175,6 @@ func initFlags() *koanf.Koanf {
 }
 
 func main() {
-
 	// Get executable path for stuffbin
 	execPath, err := os.Executable()
 	if err != nil {
