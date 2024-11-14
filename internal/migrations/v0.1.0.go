@@ -3,15 +3,16 @@ package migrations
 import (
 	"database/sql"
 	"fmt"
-	"inbox451/internal/config"
 	"log"
+
+	"inbox451/internal/config"
 
 	"github.com/jmoiron/sqlx"
 )
 
 func V0_1_0(db *sqlx.DB, config *config.Config, log *log.Logger) error {
 	log.Print("Running migration v0.1.0")
-	var schema = []string{
+	schema := []string{
 		`CREATE TABLE IF NOT EXISTS schema_migrations (
 			version VARCHAR(255) PRIMARY KEY
 		)`,

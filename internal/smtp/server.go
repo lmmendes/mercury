@@ -3,10 +3,11 @@ package smtp
 import (
 	"bytes"
 	"fmt"
-	"inbox451/internal/core"
-	"inbox451/internal/models"
 	"io"
 	"time"
+
+	"inbox451/internal/core"
+	"inbox451/internal/models"
 
 	"github.com/emersion/go-message"
 	"github.com/emersion/go-smtp"

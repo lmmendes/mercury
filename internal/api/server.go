@@ -2,15 +2,15 @@ package api
 
 import (
 	"context"
-	"inbox451/internal/assets"
-	"inbox451/internal/core"
-	"inbox451/internal/middleware"
+	"mime"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"time"
 
-	"mime"
-	"path/filepath"
+	"inbox451/internal/assets"
+	"inbox451/internal/core"
+	"inbox451/internal/middleware"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"

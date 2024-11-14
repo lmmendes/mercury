@@ -36,7 +36,8 @@ FRONTEND_DEPS = \
 .PHONY: build deps test dev pack-bin \
         build-frontend run-frontend \
         db-up db-down db-clean db-reset db-init db-install db-upgrade \
-        release-dry-run release-snapshot release-tag install-goreleaser
+        release-dry-run release-snapshot release-tag install-goreleaser \
+        fmt lint
 
 # ==================================================================================== #
 # DEVELOPMENT
@@ -147,3 +148,18 @@ release-tag:
 	@if [ -z "$(VERSION)" ]; then echo "VERSION is required. Use: make release-tag VERSION=v1.0.0"; exit 1; fi
 	git tag -a $(VERSION) -m "Release $(VERSION)"
 	git push origin $(VERSION)
+
+# ==================================================================================== #
+# QUALITY CONTROL
+# ==================================================================================== #
+
+# Format code
+fmt:
+	@echo "==> Formatting code..."
+	go run mvdan.cc/gofumpt@latest -w .
+	go run golang.org/x/tools/cmd/goimports@latest -w -local github.com/inbox451/inbox451 .
+
+# Lint code
+lint:
+	@echo "==> Linting code..."
+	go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run --fix

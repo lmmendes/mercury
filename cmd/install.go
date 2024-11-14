@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"inbox451/internal/config"
 	"log"
+
+	"inbox451/internal/config"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -41,7 +42,6 @@ func install(db *sqlx.DB, config *config.Config, prompt, idempotent bool) {
 			log.Fatalf("Error recording migration version %s: %v", m.version, err)
 		}
 	}
-
 }
 
 func checkSchema(db *sqlx.DB) (bool, error) {

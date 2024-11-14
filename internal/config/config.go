@@ -1,9 +1,10 @@
 package config
 
 import (
-	"inbox451/internal/logger"
 	"strings"
 	"time"
+
+	"inbox451/internal/logger"
 
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/env"
@@ -42,7 +43,6 @@ type Config struct {
 }
 
 func LoadConfig(configFile string, ko *koanf.Koanf) (*Config, error) {
-
 	if err := ko.Load(file.Provider(configFile), yaml.Parser()); err != nil {
 		return nil, err
 	}

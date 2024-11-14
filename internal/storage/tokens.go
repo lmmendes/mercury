@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+
 	"inbox451/internal/models"
 
 	_ "github.com/lib/pq"
@@ -45,7 +46,6 @@ func (r *repository) CreateToken(ctx context.Context, token *models.Token) error
 		&token.CreatedAt,
 		&token.UpdatedAt,
 	)
-
 	if err != nil {
 		return handleDBError(err)
 	}

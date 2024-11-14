@@ -3,11 +3,12 @@ package core
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"inbox451/internal/config"
 	"inbox451/internal/logger"
 	"inbox451/internal/models"
 	"inbox451/internal/storage"
-	"os"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // PostgreSQL driver
