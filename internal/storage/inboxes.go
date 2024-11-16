@@ -16,13 +16,7 @@ func (r *repository) CreateInbox(ctx context.Context, inbox *models.Inbox) error
 func (r *repository) GetInbox(ctx context.Context, id int) (*models.Inbox, error) {
 	var inbox models.Inbox
 	err := r.queries.GetInbox.GetContext(ctx, &inbox, id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &inbox, nil
+	return &inbox, handleDBError(err)
 }
 
 func (r *repository) GetInboxByEmail(ctx context.Context, email string) (*models.Inbox, error) {
@@ -48,16 +42,9 @@ func (r *repository) UpdateInbox(ctx context.Context, inbox *models.Inbox) error
 func (r *repository) DeleteInbox(ctx context.Context, id int) error {
 	result, err := r.queries.DeleteInbox.ExecContext(ctx, id)
 	if err != nil {
-		return err
+		return handleDBError(err)
 	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return errors.New("inbox not found")
-	}
-	return nil
+	return handleRowsAffected(result)
 }
 
 func (r *repository) ListInboxesByProject(ctx context.Context, projectID, limit, offset int) ([]*models.Inbox, int, error) {

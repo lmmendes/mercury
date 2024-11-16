@@ -2,8 +2,6 @@ package storage
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 
 	"inbox451/internal/models"
 )
@@ -43,13 +41,7 @@ func (r *repository) ListRulesByInbox(ctx context.Context, inboxID, limit, offse
 func (r *repository) GetRule(ctx context.Context, id int) (*models.ForwardRule, error) {
 	var rule models.ForwardRule
 	err := r.queries.GetRule.GetContext(ctx, &rule, id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &rule, nil
+	return &rule, handleDBError(err)
 }
 
 func (r *repository) CreateRule(ctx context.Context, rule *models.ForwardRule) error {
@@ -60,29 +52,15 @@ func (r *repository) CreateRule(ctx context.Context, rule *models.ForwardRule) e
 func (r *repository) UpdateRule(ctx context.Context, rule *models.ForwardRule) error {
 	result, err := r.queries.UpdateRule.ExecContext(ctx, rule.Sender, rule.Receiver, rule.Subject, rule.ID)
 	if err != nil {
-		return err
+		return handleDBError(err)
 	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return errors.New("rule not found")
-	}
-	return nil
+	return handleRowsAffected(result)
 }
 
 func (r *repository) DeleteRule(ctx context.Context, id int) error {
 	result, err := r.queries.DeleteRule.ExecContext(ctx, id)
 	if err != nil {
-		return err
+		return handleDBError(err)
 	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return errors.New("rule not found")
-	}
-	return nil
+	return handleRowsAffected(result)
 }

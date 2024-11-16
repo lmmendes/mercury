@@ -46,11 +46,7 @@ func (r *repository) CreateToken(ctx context.Context, token *models.Token) error
 		&token.CreatedAt,
 		&token.UpdatedAt,
 	)
-	if err != nil {
-		return handleDBError(err)
-	}
-
-	return nil
+	return handleDBError(err)
 }
 
 func (r *repository) DeleteToken(ctx context.Context, tokenID int) error {
