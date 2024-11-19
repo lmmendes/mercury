@@ -48,4 +48,7 @@ func (s *Server) routes(api *echo.Group) {
 	// Message routes
 	api.GET("/projects/:projectId/inboxes/:inboxId/messages", s.getMessages)
 	api.GET("/projects/:projectId/inboxes/:inboxId/messages/:messageId", s.getMessage)
+	api.PUT("/projects/:projectId/inboxes/:inboxId/messages/:messageId/read", s.markMessageRead)
+	api.PUT("/projects/:projectId/inboxes/:inboxId/messages/:messageId/unread", s.markMessageUnread)
+	api.DELETE("/projects/:projectId/inboxes/:inboxId/messages/:messageId", s.deleteMessage)
 }

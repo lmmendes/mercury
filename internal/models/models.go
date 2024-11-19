@@ -65,6 +65,7 @@ type Message struct {
 	Receiver string `json:"receiver" db:"receiver" validate:"required,email"`
 	Subject  string `json:"subject" db:"subject" validate:"required,max=200"`
 	Body     string `json:"body" db:"body" validate:"required"`
+	IsRead   bool   `json:"is_read" db:"is_read"`
 }
 
 type Session struct {

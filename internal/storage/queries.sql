@@ -144,17 +144,17 @@ SELECT COUNT(*) FROM forward_rules;
 -- -------------------------------------------
 
 -- name: create-message
-INSERT INTO messages (inbox_id, sender, receiver, subject, body, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+INSERT INTO messages (inbox_id, sender, receiver, subject, body, is_read, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 RETURNING id, created_at, updated_at;
 
 -- name: get-message
-SELECT id, inbox_id, sender, receiver, subject, body, created_at, updated_at
+SELECT id, inbox_id, sender, receiver, subject, body, is_read, created_at, updated_at
 FROM messages
 WHERE id = $1;
 
 -- name: list-messages-by-inbox
-SELECT id, inbox_id, sender, receiver, subject, body, created_at, updated_at
+SELECT id, inbox_id, sender, receiver, subject, body, is_read, created_at, updated_at
 FROM messages
 WHERE inbox_id = $1
 ORDER BY id
@@ -164,6 +164,26 @@ LIMIT $2 OFFSET $3;
 SELECT COUNT(*)
 FROM messages
 WHERE inbox_id = $1;
+
+-- name: update-message-read-status
+UPDATE messages
+SET is_read = $1, updated_at = CURRENT_TIMESTAMP
+WHERE id = $2;
+
+-- name: delete-message
+DELETE FROM messages WHERE id = $1;
+
+-- name: list-messages-by-inbox-with-read-filter
+SELECT id, inbox_id, sender, receiver, subject, body, is_read, created_at, updated_at
+FROM messages
+WHERE inbox_id = $1 AND is_read = $2
+ORDER BY id
+LIMIT $3 OFFSET $4;
+
+-- name: count-messages-by-inbox-with-read-filter
+SELECT COUNT(*)
+FROM messages
+WHERE inbox_id = $1 AND is_read = $2;
 
 --- ------------------------------------------
 -- Users
