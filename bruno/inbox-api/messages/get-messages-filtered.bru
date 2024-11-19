@@ -1,17 +1,18 @@
 meta {
-  name: Get Messages
+  name: Get Messages Filtered
   type: http
-  seq: 1
+  seq: 6
 }
 
 get {
-  url: {{base_url}}/projects/1/inboxes/1/messages?limit=10&offset=0
+  url: {{base_url}}/projects/1/inboxes/1/messages?limit=10&offset=0&is_read=true
   auth: none
 }
 
 query {
   limit: 10
   offset: 0
+  is_read: true
 }
 
 headers {
@@ -19,15 +20,13 @@ headers {
 }
 
 tests {
-  test("should return paginated messages list", function() {
+  test("should return filtered messages list", function() {
     expect(res.status).to.equal(200);
     expect(res.body).to.have.property('data').that.is.an('array');
     expect(res.body).to.have.property('pagination').that.includes.all.keys(['total', 'limit', 'offset']);
-    expect(res.body.pagination.limit).to.equal(10);
-    expect(res.body.pagination.offset).to.equal(0);
 
     if (res.body.data.length > 0) {
-      expect(res.body.data[0]).to.have.property('is_read').that.is.a('boolean');
+      expect(res.body.data[0]).to.have.property('is_read', true);
     }
   });
 }

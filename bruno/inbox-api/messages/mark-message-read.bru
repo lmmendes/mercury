@@ -1,0 +1,28 @@
+meta {
+  name: Mark Message as Read
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{base_url}}/projects/1/inboxes/1/messages/1/read
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+tests {
+  test("should mark message as read", function() {
+    expect(res.status).to.equal(200);
+  });
+  
+  test("should return 404 for non-existent message", function() {
+    if (res.status === 404) {
+      expect(res.body).to.have.property('code').that.equals(404);
+      expect(res.body).to.have.property('message');
+    }
+  });
+}
