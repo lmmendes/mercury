@@ -3,9 +3,9 @@ package api
 import (
 	"net/http"
 	"strconv"
-	"database/sql"
 
 	"inbox451/internal/models"
+	"inbox451/internal/storage"
 
 	"github.com/labstack/echo/v4"
 )
@@ -38,10 +38,13 @@ func (s *Server) getMessage(c echo.Context) error {
 
 	message, err := s.core.MessageService.Get(c.Request().Context(), messageID)
 	if err != nil {
+		if err == storage.ErrNotFound {
+			return s.core.HandleError(err, http.StatusNotFound)
+		}
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	if message == nil {
-		return s.core.HandleError(nil, http.StatusNotFound)
+		return s.core.HandleError(storage.ErrNotFound, http.StatusNotFound)
 	}
 	return c.JSON(http.StatusOK, message)
 }
@@ -51,6 +54,9 @@ func (s *Server) markMessageRead(c echo.Context) error {
 
 	err := s.core.MessageService.MarkAsRead(c.Request().Context(), messageID)
 	if err != nil {
+		if err == storage.ErrNotFound {
+			return s.core.HandleError(err, http.StatusNotFound)
+		}
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	return c.NoContent(http.StatusOK)
@@ -61,6 +67,9 @@ func (s *Server) markMessageUnread(c echo.Context) error {
 
 	err := s.core.MessageService.MarkAsUnread(c.Request().Context(), messageID)
 	if err != nil {
+		if err == storage.ErrNotFound {
+			return s.core.HandleError(err, http.StatusNotFound)
+		}
 		return s.core.HandleError(err, http.StatusInternalServerError)
 	}
 	return c.NoContent(http.StatusOK)
@@ -71,7 +80,7 @@ func (s *Server) deleteMessage(c echo.Context) error {
 
 	err := s.core.MessageService.Delete(c.Request().Context(), messageID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == storage.ErrNotFound {
 			return s.core.HandleError(err, http.StatusNotFound)
 		}
 		return s.core.HandleError(err, http.StatusInternalServerError)
