@@ -15,3 +15,8 @@ type PaginatedResponse struct {
 	Data       interface{} `json:"data"`
 	Pagination Pagination  `json:"pagination"`
 }
+
+type MessageQuery struct {
+	PaginationQuery
+	IsRead *bool `query:"is_read"`
+}

@@ -42,8 +42,11 @@ type Repository interface {
 	ListRules(ctx context.Context, limit, offset int) ([]*models.ForwardRule, int, error)
 	GetInboxByEmail(ctx context.Context, email string) (*models.Inbox, error)
 	GetMessage(ctx context.Context, id int) (*models.Message, error)
-	CreateMessage(ctx context.Context, message *models.Message) error
 	ListMessagesByInbox(ctx context.Context, inboxID, limit, offset int) ([]*models.Message, int, error)
+	ListMessagesByInboxWithFilter(ctx context.Context, inboxID int, isRead *bool, limit, offset int) ([]*models.Message, int, error)
+	CreateMessage(ctx context.Context, message *models.Message) error
+	UpdateMessageReadStatus(ctx context.Context, messageID int, isRead bool) error
+	DeleteMessage(ctx context.Context, messageID int) error
 
 	// User operations
 	ListUsers(ctx context.Context, limit, offset int) ([]*models.User, int, error)
