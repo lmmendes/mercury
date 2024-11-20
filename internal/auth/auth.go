@@ -73,18 +73,16 @@ func (o *Auth) Middleware(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 func (o *Auth) validateSession(c echo.Context) (*simplesessions.Session, models.User, error) {
-	sess, err := o.sess.Acquire(nil, c, c)
+	sess, err := o.sess.Acquire(c.Request().Context(), c, c)
 	if err != nil {
 		return nil, models.User{}, echo.NewHTTPError(http.StatusForbidden, err.Error())
 	}
 
-	// Get the session variables.
 	vars, err := sess.GetMulti("user_id")
 	if err != nil {
 		return nil, models.User{}, echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	// Validate the user ID in the session.
 	userID, err := o.sessStore.Int(vars["user_id"], nil)
 	if err != nil || userID < 1 {
 		o.log.Printf("error fetching session user ID: %v", err)
