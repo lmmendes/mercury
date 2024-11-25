@@ -76,14 +76,14 @@ mocks: install-mockery
 # Run tests with coverage
 test-coverage:
 	@echo "==> Running tests with coverage..."
-	@go test -coverprofile=coverage.out ./...
-	@go tool cover -html=coverage.out
+	@go test -coverprofile=coverage.txt ./...
+	@go tool cover -html=coverage.txt
 
 # Clean test cache and generated mocks
 clean-test:
 	@echo "==> Cleaning test cache and mocks..."
 	@go clean -testcache
-	@rm -rf internal/mocks coverage.out
+	@rm -rf internal/mocks coverage.txt
 
 # ==================================================================================== #
 # FRONTEND
