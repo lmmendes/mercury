@@ -29,10 +29,13 @@ func (r *repository) ListMessagesByInbox(ctx context.Context, inboxID, limit, of
 		return nil, 0, handleDBError(err)
 	}
 
-	var messages []*models.Message
-	err = r.queries.ListMessagesByInbox.SelectContext(ctx, &messages, inboxID, limit, offset)
-	if err != nil {
-		return nil, 0, handleDBError(err)
+	messages := []*models.Message{}
+
+	if total > 0 {
+		err = r.queries.ListMessagesByInbox.SelectContext(ctx, &messages, inboxID, limit, offset)
+		if err != nil {
+			return nil, 0, handleDBError(err)
+		}
 	}
 
 	return messages, total, nil

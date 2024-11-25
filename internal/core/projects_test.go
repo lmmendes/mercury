@@ -298,3 +298,198 @@ func TestProjectService_Delete(t *testing.T) {
 		})
 	}
 }
+
+func TestProjectService_AddUser(t *testing.T) {
+	tests := []struct {
+		name        string
+		projectUser *models.ProjectUser
+		mockFn      func(*mocks.Repository)
+		wantErr     bool
+	}{
+		{
+			name: "successful add user",
+			projectUser: &models.ProjectUser{
+				ProjectID: 1,
+				UserID:    1,
+				Role:      "member",
+			},
+			mockFn: func(m *mocks.Repository) {
+				m.On("ProjectAddUser", mock.Anything, mock.MatchedBy(func(pu *models.ProjectUser) bool {
+					return pu.ProjectID == 1 && pu.UserID == 1 && pu.Role == "member"
+				})).Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "repository error",
+			projectUser: &models.ProjectUser{
+				ProjectID: 1,
+				UserID:    1,
+				Role:      "member",
+			},
+			mockFn: func(m *mocks.Repository) {
+				m.On("ProjectAddUser", mock.Anything, mock.Anything).
+					Return(errors.New("database error"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			core, mockRepo := setupProjectTestCore(t)
+			tt.mockFn(mockRepo)
+
+			err := core.ProjectService.AddUser(context.Background(), tt.projectUser)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			mockRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestProjectService_RemoveUser(t *testing.T) {
+	tests := []struct {
+		name      string
+		projectID int
+		userID    int
+		mockFn    func(*mocks.Repository)
+		wantErr   bool
+	}{
+		{
+			name:      "successful remove user",
+			projectID: 1,
+			userID:    1,
+			mockFn: func(m *mocks.Repository) {
+				m.On("ProjectRemoveUser", mock.Anything, 1, 1).Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name:      "repository error",
+			projectID: 1,
+			userID:    1,
+			mockFn: func(m *mocks.Repository) {
+				m.On("ProjectRemoveUser", mock.Anything, 1, 1).
+					Return(errors.New("database error"))
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			core, mockRepo := setupProjectTestCore(t)
+			tt.mockFn(mockRepo)
+
+			err := core.ProjectService.RemoveUser(context.Background(), tt.projectID, tt.userID)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			mockRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestProjectService_ListByUser(t *testing.T) {
+	now := time.Now()
+	tests := []struct {
+		name    string
+		userID  int
+		limit   int
+		offset  int
+		mockFn  func(*mocks.Repository)
+		want    *models.PaginatedResponse
+		wantErr bool
+	}{
+		{
+			name:   "successful list",
+			userID: 1,
+			limit:  10,
+			offset: 0,
+			mockFn: func(m *mocks.Repository) {
+				projects := []*models.Project{
+					{
+						Base: models.Base{
+							ID:        1,
+							CreatedAt: null.TimeFrom(now),
+							UpdatedAt: null.TimeFrom(now),
+						},
+						Name: "Project 1",
+					},
+					{
+						Base: models.Base{
+							ID:        2,
+							CreatedAt: null.TimeFrom(now),
+							UpdatedAt: null.TimeFrom(now),
+						},
+						Name: "Project 2",
+					},
+				}
+				m.On("ListProjectsByUser", mock.Anything, 1, 10, 0).Return(projects, 2, nil)
+			},
+			want: &models.PaginatedResponse{
+				Data: []*models.Project{
+					{
+						Base: models.Base{
+							ID:        1,
+							CreatedAt: null.TimeFrom(now),
+							UpdatedAt: null.TimeFrom(now),
+						},
+						Name: "Project 1",
+					},
+					{
+						Base: models.Base{
+							ID:        2,
+							CreatedAt: null.TimeFrom(now),
+							UpdatedAt: null.TimeFrom(now),
+						},
+						Name: "Project 2",
+					},
+				},
+				Pagination: models.Pagination{
+					Total:  2,
+					Limit:  10,
+					Offset: 0,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name:   "repository error",
+			userID: 1,
+			limit:  10,
+			offset: 0,
+			mockFn: func(m *mocks.Repository) {
+				m.On("ListProjectsByUser", mock.Anything, 1, 10, 0).
+					Return([]*models.Project(nil), 0, errors.New("database error"))
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			core, mockRepo := setupProjectTestCore(t)
+			tt.mockFn(mockRepo)
+
+			got, err := core.ProjectService.ListByUser(context.Background(), tt.userID, tt.limit, tt.offset)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
+			}
+
+			mockRepo.AssertExpectations(t)
+		})
+	}
+}

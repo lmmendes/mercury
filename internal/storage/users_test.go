@@ -21,12 +21,13 @@ func setupTestDB(t *testing.T) (*repository, sqlmock.Sqlmock) {
 
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 
-	mock.ExpectPrepare("SELECT (.+) FROM users")          // ListUsers
-	mock.ExpectPrepare("SELECT COUNT(.+) FROM users")     // CountUsers
-	mock.ExpectPrepare("SELECT (.+) FROM users WHERE id") // GetUser
-	mock.ExpectPrepare("INSERT INTO users")               // CreateUser
-	mock.ExpectPrepare("UPDATE users")                    // UpdateUser
-	mock.ExpectPrepare("DELETE FROM users")               // DeleteUser
+	mock.ExpectPrepare("SELECT (.+) FROM users")                    // ListUsers
+	mock.ExpectPrepare("SELECT COUNT(.+) FROM users")              // CountUsers
+	mock.ExpectPrepare("SELECT (.+) FROM users WHERE id")          // GetUser
+	mock.ExpectPrepare("SELECT (.+) FROM users WHERE username")    // GetUserByUsername
+	mock.ExpectPrepare("INSERT INTO users")                        // CreateUser
+	mock.ExpectPrepare("UPDATE users")                             // UpdateUser
+	mock.ExpectPrepare("DELETE FROM users")                        // DeleteUser
 
 	listUsers, err := sqlxDB.Preparex("SELECT id, name, username, password, email, status, role, loggedin_at, created_at, updated_at FROM users ORDER BY id LIMIT ? OFFSET ?")
 	require.NoError(t, err)
@@ -35,6 +36,9 @@ func setupTestDB(t *testing.T) (*repository, sqlmock.Sqlmock) {
 	require.NoError(t, err)
 
 	getUser, err := sqlxDB.Preparex("SELECT id, name, username, password, email, status, role, password_login, loggedin_at, created_at, updated_at FROM users WHERE id = ?")
+	require.NoError(t, err)
+
+	getUserByUsername, err := sqlxDB.Preparex("SELECT id, name, username, password, email, status, role, password_login, loggedin_at, created_at, updated_at FROM users WHERE username = ?")
 	require.NoError(t, err)
 
 	createUser, err := sqlxDB.Preparex("INSERT INTO users (name, username, password, email, status, role, password_login) VALUES (?, ?, ?, ?, ?, ?, ?)")
@@ -47,12 +51,13 @@ func setupTestDB(t *testing.T) (*repository, sqlmock.Sqlmock) {
 	require.NoError(t, err)
 
 	queries := &Queries{
-		ListUsers:  listUsers,
-		CountUsers: countUsers,
-		GetUser:    getUser,
-		CreateUser: createUser,
-		UpdateUser: updateUser,
-		DeleteUser: deleteUser,
+		ListUsers:         listUsers,
+		CountUsers:        countUsers,
+		GetUser:          getUser,
+		GetUserByUsername: getUserByUsername,
+		CreateUser:        createUser,
+		UpdateUser:        updateUser,
+		DeleteUser:        deleteUser,
 	}
 
 	repo := &repository{
@@ -477,6 +482,96 @@ func TestRepository_DeleteUser(t *testing.T) {
 			}
 
 			assert.NoError(t, err)
+
+			err = mock.ExpectationsWereMet()
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestRepository_GetUserByUsername(t *testing.T) {
+	now := time.Now()
+
+	tests := []struct {
+		name     string
+		username string
+		mockFn   func(sqlmock.Sqlmock)
+		want     *models.User
+		wantErr  bool
+	}{
+		{
+			name:     "existing user",
+			username: "testuser",
+			mockFn: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{
+					"id", "name", "username", "password", "email",
+					"status", "role", "password_login", "loggedin_at",
+					"created_at", "updated_at",
+				}).AddRow(
+					1, "Test User", "testuser", "hash", "test@example.com",
+					"active", "user", true, nil,
+					now, now,
+				)
+
+				mock.ExpectQuery("SELECT (.+) FROM users WHERE username").
+					WithArgs("testuser").
+					WillReturnRows(rows)
+			},
+			want: &models.User{
+				Base: models.Base{
+					ID:        1,
+					CreatedAt: null.TimeFrom(now),
+					UpdatedAt: null.TimeFrom(now),
+				},
+				Name:          "Test User",
+				Username:      "testuser",
+				Password:      "hash",
+				Email:         "test@example.com",
+				Status:        "active",
+				Role:          "user",
+				PasswordLogin: true,
+			},
+			wantErr: false,
+		},
+		{
+			name:     "non-existent user",
+			username: "nonexistent",
+			mockFn: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT (.+) FROM users WHERE username").
+					WithArgs("nonexistent").
+					WillReturnError(sql.ErrNoRows)
+			},
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			name:     "database error",
+			username: "testuser",
+			mockFn: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery("SELECT (.+) FROM users WHERE username").
+					WithArgs("testuser").
+					WillReturnError(sql.ErrConnDone)
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo, mock := setupTestDB(t)
+			defer repo.db.Close()
+
+			tt.mockFn(mock)
+
+			got, err := repo.GetUserByUsername(context.Background(), tt.username)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, got)
 
 			err = mock.ExpectationsWereMet()
 			assert.NoError(t, err)
