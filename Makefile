@@ -12,6 +12,7 @@ LD_FLAGS := -s -w \
 # Tool configurations
 GOPATH ?= $(shell go env GOPATH)
 STUFFBIN ?= $(GOPATH)/bin/stuffbin
+MOCKERY ?= $(GOPATH)/bin/mockery
 PNPM ?= pnpm
 GO ?= $(shell which go)
 
@@ -55,6 +56,35 @@ deps: $(STUFFBIN)
 # Run tests
 test:
 	go test -v ./...
+
+# ==================================================================================== #
+# TESTING & MOCKING
+# ==================================================================================== #
+
+# Install mockery
+install-mockery:
+	@echo "==> Installing mockery..."
+	go get github.com/vektra/mockery/v2
+	go install github.com/vektra/mockery/v2
+
+# Generate mocks
+.PHONY: mocks
+mocks: install-mockery
+	@echo "==> Generating mocks..."
+	@$(MOCKERY)
+	@echo "==> Mocks generated successfully"
+
+# Run tests with coverage
+test-coverage:
+	@echo "==> Running tests with coverage..."
+	@go test -coverprofile=coverage.out ./...
+	@go tool cover -html=coverage.out
+
+# Clean test cache and generated mocks
+clean-test:
+	@echo "==> Cleaning test cache and mocks..."
+	@go clean -testcache
+	@rm -rf internal/mocks coverage.out
 
 # ==================================================================================== #
 # FRONTEND

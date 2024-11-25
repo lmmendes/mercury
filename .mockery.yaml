@@ -1,0 +1,10 @@
+with-expecter: true
+inpackage: false
+dir: "internal/mocks"
+mockname: "Mock{{.InterfaceName}}"
+outpkg: "mocks"
+filename: "{{.InterfaceName}}.go"
+packages:
+  inbox451/internal/storage:
+    config:
+      all: true
