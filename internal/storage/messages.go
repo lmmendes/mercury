@@ -16,12 +16,10 @@ func (r *repository) CreateMessage(ctx context.Context, message *models.Message)
 func (r *repository) GetMessage(ctx context.Context, id int) (*models.Message, error) {
 	var message models.Message
 	err := r.queries.GetMessage.GetContext(ctx, &message, id)
-
 	if err != nil {
 		return nil, handleDBError(err)
 	}
 	return &message, nil
-
 }
 
 func (r *repository) ListMessagesByInbox(ctx context.Context, inboxID, limit, offset int) ([]*models.Message, int, error) {

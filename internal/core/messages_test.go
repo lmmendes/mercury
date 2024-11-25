@@ -283,7 +283,7 @@ func TestMessageService_ListByInbox(t *testing.T) {
 					Return([]*models.Message(nil), 0, errors.New("database error"))
 			},
 			want:    nil,
-				wantErr: true,
+			wantErr: true,
 		},
 	}
 

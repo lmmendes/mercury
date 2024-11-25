@@ -47,11 +47,11 @@ jobs:
         run: make build
 
       - name: Run tests
-        run: make test-coverage
+        run: go test -coverprofile=coverage.txt
 
       - uses: codecov/codecov-action@v5
         with:
-          files: coverage.out
+          files: coverage.txt
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
