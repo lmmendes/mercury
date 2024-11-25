@@ -21,13 +21,13 @@ func setupTestDB(t *testing.T) (*repository, sqlmock.Sqlmock) {
 
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 
-	mock.ExpectPrepare("SELECT (.+) FROM users")                    // ListUsers
-	mock.ExpectPrepare("SELECT COUNT(.+) FROM users")              // CountUsers
-	mock.ExpectPrepare("SELECT (.+) FROM users WHERE id")          // GetUser
-	mock.ExpectPrepare("SELECT (.+) FROM users WHERE username")    // GetUserByUsername
-	mock.ExpectPrepare("INSERT INTO users")                        // CreateUser
-	mock.ExpectPrepare("UPDATE users")                             // UpdateUser
-	mock.ExpectPrepare("DELETE FROM users")                        // DeleteUser
+	mock.ExpectPrepare("SELECT (.+) FROM users")                // ListUsers
+	mock.ExpectPrepare("SELECT COUNT(.+) FROM users")           // CountUsers
+	mock.ExpectPrepare("SELECT (.+) FROM users WHERE id")       // GetUser
+	mock.ExpectPrepare("SELECT (.+) FROM users WHERE username") // GetUserByUsername
+	mock.ExpectPrepare("INSERT INTO users")                     // CreateUser
+	mock.ExpectPrepare("UPDATE users")                          // UpdateUser
+	mock.ExpectPrepare("DELETE FROM users")                     // DeleteUser
 
 	listUsers, err := sqlxDB.Preparex("SELECT id, name, username, password, email, status, role, loggedin_at, created_at, updated_at FROM users ORDER BY id LIMIT ? OFFSET ?")
 	require.NoError(t, err)
@@ -53,7 +53,7 @@ func setupTestDB(t *testing.T) (*repository, sqlmock.Sqlmock) {
 	queries := &Queries{
 		ListUsers:         listUsers,
 		CountUsers:        countUsers,
-		GetUser:          getUser,
+		GetUser:           getUser,
 		GetUserByUsername: getUserByUsername,
 		CreateUser:        createUser,
 		UpdateUser:        updateUser,

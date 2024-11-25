@@ -21,13 +21,13 @@ func setupMessageTestDB(t *testing.T) (*repository, sqlmock.Sqlmock) {
 
 	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
 
-	mock.ExpectPrepare("SELECT (.+) FROM messages WHERE inbox_id")                           // ListMessagesByInbox
-	mock.ExpectPrepare("SELECT COUNT(.+) FROM messages WHERE inbox_id")                      // CountMessagesByInbox
-	mock.ExpectPrepare("SELECT (.+) FROM messages WHERE id")                                 // GetMessage
-	mock.ExpectPrepare("INSERT INTO messages")                                               // CreateMessage
-	mock.ExpectPrepare("UPDATE messages")                                                    // UpdateMessageReadStatus
-	mock.ExpectPrepare("DELETE FROM messages")                                               // DeleteMessage
-	mock.ExpectPrepare("SELECT (.+) FROM messages WHERE inbox_id = \\? AND is_read = \\?")   // ListMessagesWithFilter
+	mock.ExpectPrepare("SELECT (.+) FROM messages WHERE inbox_id")                              // ListMessagesByInbox
+	mock.ExpectPrepare("SELECT COUNT(.+) FROM messages WHERE inbox_id")                         // CountMessagesByInbox
+	mock.ExpectPrepare("SELECT (.+) FROM messages WHERE id")                                    // GetMessage
+	mock.ExpectPrepare("INSERT INTO messages")                                                  // CreateMessage
+	mock.ExpectPrepare("UPDATE messages")                                                       // UpdateMessageReadStatus
+	mock.ExpectPrepare("DELETE FROM messages")                                                  // DeleteMessage
+	mock.ExpectPrepare("SELECT (.+) FROM messages WHERE inbox_id = \\? AND is_read = \\?")      // ListMessagesWithFilter
 	mock.ExpectPrepare("SELECT COUNT(.+) FROM messages WHERE inbox_id = \\? AND is_read = \\?") // CountMessagesWithFilter
 
 	listMessages, err := sqlxDB.Preparex("SELECT id, inbox_id, sender, receiver, subject, body, is_read, created_at, updated_at FROM messages WHERE inbox_id = ? LIMIT ? OFFSET ?")
