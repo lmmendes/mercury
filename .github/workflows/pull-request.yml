@@ -8,6 +8,9 @@ on:
       - synchronize
     branches:
       - main
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -42,6 +45,15 @@ jobs:
 
       - name: Build application
         run: make build
+
+      - name: Run tests
+        run: make test-coverage
+
+      - uses: codecov/codecov-action@v5
+        with:
+          files: coverage.out
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   frontend:
     name: Frontend Checks

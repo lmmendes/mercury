@@ -38,7 +38,7 @@ FRONTEND_DEPS = \
         build-frontend run-frontend \
         db-up db-down db-clean db-reset db-init db-install db-upgrade \
         release-dry-run release-snapshot release-tag install-goreleaser \
-        fmt lint
+        fmt lint mocks
 
 # ==================================================================================== #
 # DEVELOPMENT
@@ -68,7 +68,6 @@ install-mockery:
 	go install github.com/vektra/mockery/v2
 
 # Generate mocks
-.PHONY: mocks
 mocks: install-mockery
 	@echo "==> Generating mocks..."
 	@$(MOCKERY)
