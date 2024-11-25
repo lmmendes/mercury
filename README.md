@@ -8,6 +8,7 @@ A simple email server that allows you to create inboxes and rules to filter emai
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/inbox451/inbox451)](https://goreportcard.com/report/github.com/inbox451/inbox451)
 [![Build Status](https://github.com/inbox451/inbox451/actions/workflows/pull-request.yml/badge.svg)](https://github.com/inbox451/inbox451/actions/workflows/pull-request.yml)
+[![codecov](https://codecov.io/gh/inbox451/inbox451/graph/badge.svg?token=4HPWU0V3YD)](https://codecov.io/gh/inbox451/inbox451)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Features
