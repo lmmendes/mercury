@@ -17,8 +17,8 @@ import (
 	null "github.com/volatiletech/null/v9"
 )
 
-func setupInboxTestCore(t *testing.T) (*Core, *mocks.MockRepository) {
-	mockRepo := mocks.NewMockRepository(t)
+func setupInboxTestCore(t *testing.T) (*Core, *mocks.Repository) {
+	mockRepo := mocks.NewRepository(t)
 	logger := logger.New(io.Discard, logger.DEBUG)
 
 	core := &Core{
@@ -34,7 +34,7 @@ func TestInboxService_Create(t *testing.T) {
 	tests := []struct {
 		name    string
 		inbox   *models.Inbox
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		wantErr bool
 	}{
 		{
@@ -43,7 +43,7 @@ func TestInboxService_Create(t *testing.T) {
 				ProjectID: 1,
 				Email:     "test@example.com",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("CreateInbox", mock.Anything, mock.AnythingOfType("*models.Inbox")).
 					Return(nil)
 			},
@@ -55,7 +55,7 @@ func TestInboxService_Create(t *testing.T) {
 				ProjectID: 1,
 				Email:     "test@example.com",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("CreateInbox", mock.Anything, mock.AnythingOfType("*models.Inbox")).
 					Return(errors.New("database error"))
 			},
@@ -85,7 +85,7 @@ func TestInboxService_Get(t *testing.T) {
 	tests := []struct {
 		name    string
 		id      int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		want    *models.Inbox
 		wantErr bool
 		errType error
@@ -93,7 +93,7 @@ func TestInboxService_Get(t *testing.T) {
 		{
 			name: "existing inbox",
 			id:   1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("GetInbox", mock.Anything, 1).Return(&models.Inbox{
 					Base: models.Base{
 						ID:        1,
@@ -118,7 +118,7 @@ func TestInboxService_Get(t *testing.T) {
 		{
 			name: "non-existent inbox",
 			id:   999,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("GetInbox", mock.Anything, 999).Return(nil, storage.ErrNotFound)
 			},
 			want:    nil,
@@ -152,7 +152,7 @@ func TestInboxService_Update(t *testing.T) {
 	tests := []struct {
 		name    string
 		inbox   *models.Inbox
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		wantErr bool
 	}{
 		{
@@ -162,7 +162,7 @@ func TestInboxService_Update(t *testing.T) {
 				ProjectID: 1,
 				Email:     "updated@example.com",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("UpdateInbox", mock.Anything, mock.AnythingOfType("*models.Inbox")).
 					Return(nil)
 			},
@@ -175,7 +175,7 @@ func TestInboxService_Update(t *testing.T) {
 				ProjectID: 1,
 				Email:     "updated@example.com",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("UpdateInbox", mock.Anything, mock.AnythingOfType("*models.Inbox")).
 					Return(storage.ErrNotFound)
 			},
@@ -204,13 +204,13 @@ func TestInboxService_Delete(t *testing.T) {
 	tests := []struct {
 		name    string
 		id      int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		wantErr bool
 	}{
 		{
 			name: "successful deletion",
 			id:   1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("DeleteInbox", mock.Anything, 1).Return(nil)
 			},
 			wantErr: false,
@@ -218,7 +218,7 @@ func TestInboxService_Delete(t *testing.T) {
 		{
 			name: "delete non-existent inbox",
 			id:   999,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("DeleteInbox", mock.Anything, 999).Return(storage.ErrNotFound)
 			},
 			wantErr: true,
@@ -248,7 +248,7 @@ func TestInboxService_ListByProject(t *testing.T) {
 		projectID int
 		limit     int
 		offset    int
-		mockFn    func(*mocks.MockRepository)
+		mockFn    func(*mocks.Repository)
 		want      *models.PaginatedResponse
 		wantErr   bool
 	}{
@@ -257,7 +257,7 @@ func TestInboxService_ListByProject(t *testing.T) {
 			projectID: 1,
 			limit:     10,
 			offset:    0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				inboxes := []*models.Inbox{
 					{
 						Base:      models.Base{ID: 1},
@@ -298,7 +298,7 @@ func TestInboxService_ListByProject(t *testing.T) {
 			projectID: 1,
 			limit:     10,
 			offset:    0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("ListInboxesByProject", mock.Anything, 1, 10, 0).
 					Return([]*models.Inbox(nil), 0, errors.New("database error"))
 			},
@@ -310,7 +310,7 @@ func TestInboxService_ListByProject(t *testing.T) {
 			projectID: 2,
 			limit:     10,
 			offset:    0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("ListInboxesByProject", mock.Anything, 2, 10, 0).
 					Return([]*models.Inbox{}, 0, nil)
 			},

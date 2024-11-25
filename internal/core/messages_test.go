@@ -17,8 +17,8 @@ import (
 	null "github.com/volatiletech/null/v9"
 )
 
-func setupMessageTestCore(t *testing.T) (*Core, *mocks.MockRepository) {
-	mockRepo := mocks.NewMockRepository(t)
+func setupMessageTestCore(t *testing.T) (*Core, *mocks.Repository) {
+	mockRepo := mocks.NewRepository(t)
 	logger := logger.New(io.Discard, logger.DEBUG)
 
 	core := &Core{
@@ -34,7 +34,7 @@ func TestMessageService_Store(t *testing.T) {
 	tests := []struct {
 		name    string
 		message *models.Message
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		wantErr bool
 	}{
 		{
@@ -46,7 +46,7 @@ func TestMessageService_Store(t *testing.T) {
 				Subject:  "Test Subject",
 				Body:     "Test Body",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("CreateMessage", mock.Anything, mock.AnythingOfType("*models.Message")).
 					Return(nil)
 			},
@@ -61,7 +61,7 @@ func TestMessageService_Store(t *testing.T) {
 				Subject:  "Test Subject",
 				Body:     "Test Body",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("CreateMessage", mock.Anything, mock.AnythingOfType("*models.Message")).
 					Return(errors.New("database error"))
 			},
@@ -91,7 +91,7 @@ func TestMessageService_Get(t *testing.T) {
 	tests := []struct {
 		name    string
 		id      int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		want    *models.Message
 		wantErr bool
 		errType error
@@ -99,7 +99,7 @@ func TestMessageService_Get(t *testing.T) {
 		{
 			name: "existing message",
 			id:   1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("GetMessage", mock.Anything, 1).Return(&models.Message{
 					Base: models.Base{
 						ID:        1,
@@ -130,7 +130,7 @@ func TestMessageService_Get(t *testing.T) {
 		{
 			name: "non-existent message",
 			id:   999,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("GetMessage", mock.Anything, 999).Return(nil, storage.ErrNotFound)
 			},
 			want:    nil,
@@ -166,7 +166,7 @@ func TestMessageService_ListByInbox(t *testing.T) {
 		inboxID int
 		limit   int
 		offset  int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		want    *models.PaginatedResponse
 		wantErr bool
 	}{
@@ -175,7 +175,7 @@ func TestMessageService_ListByInbox(t *testing.T) {
 			inboxID: 1,
 			limit:   10,
 			offset:  0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				messages := []*models.Message{
 					{
 						Base:     models.Base{ID: 1},
@@ -228,7 +228,7 @@ func TestMessageService_ListByInbox(t *testing.T) {
 			inboxID: 1,
 			limit:   10,
 			offset:  0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("ListMessagesByInbox", mock.Anything, 1, 10, 0).
 					Return([]*models.Message(nil), 0, errors.New("database error"))
 			},
@@ -240,7 +240,7 @@ func TestMessageService_ListByInbox(t *testing.T) {
 			inboxID: 2,
 			limit:   10,
 			offset:  0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("ListMessagesByInbox", mock.Anything, 2, 10, 0).
 					Return([]*models.Message{}, 0, nil)
 			},

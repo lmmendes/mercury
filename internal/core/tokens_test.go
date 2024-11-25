@@ -17,8 +17,8 @@ import (
 	null "github.com/volatiletech/null/v9"
 )
 
-func setupTokenTestCore(t *testing.T) (*Core, *mocks.MockRepository) {
-	mockRepo := mocks.NewMockRepository(t)
+func setupTokenTestCore(t *testing.T) (*Core, *mocks.Repository) {
+	mockRepo := mocks.NewRepository(t)
 	logger := logger.New(io.Discard, logger.DEBUG)
 
 	core := &Core{
@@ -36,7 +36,7 @@ func TestTokenService_ListByUser(t *testing.T) {
 		userID  int
 		limit   int
 		offset  int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		want    *models.PaginatedResponse
 		wantErr bool
 	}{
@@ -45,7 +45,7 @@ func TestTokenService_ListByUser(t *testing.T) {
 			userID: 1,
 			limit:  10,
 			offset: 0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				tokens := []*models.Token{
 					{
 						Base:   models.Base{ID: 1},
@@ -90,7 +90,7 @@ func TestTokenService_ListByUser(t *testing.T) {
 			userID: 1,
 			limit:  10,
 			offset: 0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("ListTokensByUser", mock.Anything, 1, 10, 0).
 					Return([]*models.Token(nil), 0, errors.New("database error"))
 			},
@@ -102,7 +102,7 @@ func TestTokenService_ListByUser(t *testing.T) {
 			userID: 2,
 			limit:  10,
 			offset: 0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("ListTokensByUser", mock.Anything, 2, 10, 0).
 					Return([]*models.Token{}, 0, nil)
 			},
@@ -142,7 +142,7 @@ func TestTokenService_GetByUser(t *testing.T) {
 		name    string
 		tokenID int
 		userID  int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		want    *models.Token
 		wantErr bool
 		errType error
@@ -151,7 +151,7 @@ func TestTokenService_GetByUser(t *testing.T) {
 			name:    "existing token",
 			tokenID: 1,
 			userID:  1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("GetTokenByUser", mock.Anything, 1, 1).Return(&models.Token{
 					Base: models.Base{
 						ID:        1,
@@ -179,7 +179,7 @@ func TestTokenService_GetByUser(t *testing.T) {
 			name:    "non-existent token",
 			tokenID: 999,
 			userID:  1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("GetTokenByUser", mock.Anything, 999, 1).Return(nil, storage.ErrNotFound)
 			},
 			want:    nil,
@@ -214,13 +214,13 @@ func TestTokenService_CreateForUser(t *testing.T) {
 		name      string
 		userID    int
 		tokenData *models.Token
-		mockFn    func(*mocks.MockRepository)
+		mockFn    func(*mocks.Repository)
 		wantErr   bool
 	}{
 		{
 			name:   "successful creation with default name",
 			userID: 1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("CreateToken", mock.Anything, mock.MatchedBy(func(token *models.Token) bool {
 					return token.UserID == 1 &&
 						token.Name == "API Token" &&
@@ -235,7 +235,7 @@ func TestTokenService_CreateForUser(t *testing.T) {
 			tokenData: &models.Token{
 				Name: "Custom Token",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("CreateToken", mock.Anything, mock.MatchedBy(func(token *models.Token) bool {
 					return token.UserID == 1 &&
 						token.Name == "Custom Token" &&
@@ -247,7 +247,7 @@ func TestTokenService_CreateForUser(t *testing.T) {
 		{
 			name:   "repository error",
 			userID: 1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("CreateToken", mock.Anything, mock.Anything).
 					Return(errors.New("database error"))
 			},
@@ -286,14 +286,14 @@ func TestTokenService_DeleteByUser(t *testing.T) {
 		name    string
 		tokenID int
 		userID  int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		wantErr bool
 	}{
 		{
 			name:    "successful deletion",
 			tokenID: 1,
 			userID:  1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("GetTokenByUser", mock.Anything, 1, 1).
 					Return(&models.Token{Base: models.Base{ID: 1}, UserID: 1}, nil)
 				m.On("DeleteToken", mock.Anything, 1).Return(nil)
@@ -304,7 +304,7 @@ func TestTokenService_DeleteByUser(t *testing.T) {
 			name:    "token not found",
 			tokenID: 999,
 			userID:  1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("GetTokenByUser", mock.Anything, 1, 999).
 					Return(nil, storage.ErrNotFound)
 			},
@@ -314,7 +314,7 @@ func TestTokenService_DeleteByUser(t *testing.T) {
 			name:    "delete error",
 			tokenID: 1,
 			userID:  1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("GetTokenByUser", mock.Anything, 1, 1).
 					Return(&models.Token{Base: models.Base{ID: 1}, UserID: 1}, nil)
 				m.On("DeleteToken", mock.Anything, 1).

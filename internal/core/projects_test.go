@@ -17,8 +17,8 @@ import (
 	null "github.com/volatiletech/null/v9"
 )
 
-func setupProjectTestCore(t *testing.T) (*Core, *mocks.MockRepository) {
-	mockRepo := mocks.NewMockRepository(t)
+func setupProjectTestCore(t *testing.T) (*Core, *mocks.Repository) {
+	mockRepo := mocks.NewRepository(t)
 	logger := logger.New(io.Discard, logger.DEBUG)
 
 	core := &Core{
@@ -34,7 +34,7 @@ func TestProjectService_Create(t *testing.T) {
 	tests := []struct {
 		name    string
 		project *models.Project
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		wantErr bool
 	}{
 		{
@@ -42,7 +42,7 @@ func TestProjectService_Create(t *testing.T) {
 			project: &models.Project{
 				Name: "Test Project",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("CreateProject", mock.Anything, mock.AnythingOfType("*models.Project")).
 					Return(nil)
 			},
@@ -53,7 +53,7 @@ func TestProjectService_Create(t *testing.T) {
 			project: &models.Project{
 				Name: "Test Project",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("CreateProject", mock.Anything, mock.AnythingOfType("*models.Project")).
 					Return(errors.New("database error"))
 			},
@@ -83,7 +83,7 @@ func TestProjectService_Get(t *testing.T) {
 	tests := []struct {
 		name    string
 		id      int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		want    *models.Project
 		wantErr bool
 		errType error
@@ -91,7 +91,7 @@ func TestProjectService_Get(t *testing.T) {
 		{
 			name: "existing project",
 			id:   1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("GetProject", mock.Anything, 1).Return(&models.Project{
 					Base: models.Base{
 						ID:        1,
@@ -114,7 +114,7 @@ func TestProjectService_Get(t *testing.T) {
 		{
 			name: "non-existent project",
 			id:   999,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("GetProject", mock.Anything, 999).Return(nil, storage.ErrNotFound)
 			},
 			want:    nil,
@@ -149,7 +149,7 @@ func TestProjectService_List(t *testing.T) {
 		name    string
 		limit   int
 		offset  int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		want    *models.PaginatedResponse
 		wantErr bool
 	}{
@@ -157,7 +157,7 @@ func TestProjectService_List(t *testing.T) {
 			name:   "successful list",
 			limit:  10,
 			offset: 0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				projects := []*models.Project{
 					{Base: models.Base{ID: 1}, Name: "Project 1"},
 					{Base: models.Base{ID: 2}, Name: "Project 2"},
@@ -181,7 +181,7 @@ func TestProjectService_List(t *testing.T) {
 			name:   "repository error",
 			limit:  10,
 			offset: 0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("ListProjects", mock.Anything, 10, 0).Return([]*models.Project(nil), 0, errors.New("database error"))
 			},
 			want:    nil,
@@ -211,7 +211,7 @@ func TestProjectService_Update(t *testing.T) {
 	tests := []struct {
 		name    string
 		project *models.Project
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		wantErr bool
 	}{
 		{
@@ -220,7 +220,7 @@ func TestProjectService_Update(t *testing.T) {
 				Base: models.Base{ID: 1},
 				Name: "Updated Project",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("UpdateProject", mock.Anything, mock.AnythingOfType("*models.Project")).
 					Return(nil)
 			},
@@ -232,7 +232,7 @@ func TestProjectService_Update(t *testing.T) {
 				Base: models.Base{ID: 999},
 				Name: "Updated Project",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("UpdateProject", mock.Anything, mock.AnythingOfType("*models.Project")).
 					Return(storage.ErrNotFound)
 			},
@@ -261,13 +261,13 @@ func TestProjectService_Delete(t *testing.T) {
 	tests := []struct {
 		name    string
 		id      int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		wantErr bool
 	}{
 		{
 			name: "successful deletion",
 			id:   1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("DeleteProject", mock.Anything, 1).Return(nil)
 			},
 			wantErr: false,
@@ -275,7 +275,7 @@ func TestProjectService_Delete(t *testing.T) {
 		{
 			name: "delete non-existent project",
 			id:   999,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("DeleteProject", mock.Anything, 999).Return(storage.ErrNotFound)
 			},
 			wantErr: true,

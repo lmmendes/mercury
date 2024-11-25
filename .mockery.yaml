@@ -1,9 +1,10 @@
 with-expecter: true
+disable-version-string: true
 inpackage: false
 dir: "internal/mocks"
-mockname: "Mock{{.InterfaceName}}"
+mockname: "{{.InterfaceName}}"
 outpkg: "mocks"
-filename: "{{.InterfaceName}}.go"
+filename: "{{.MockName}}_mock.go"
 packages:
   inbox451/internal/storage:
     config:

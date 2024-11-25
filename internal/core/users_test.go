@@ -17,8 +17,8 @@ import (
 	null "github.com/volatiletech/null/v9"
 )
 
-func setupTestCore(t *testing.T) (*Core, *mocks.MockRepository) {
-	mockRepo := mocks.NewMockRepository(t)
+func setupTestCore(t *testing.T) (*Core, *mocks.Repository) {
+	mockRepo := mocks.NewRepository(t)
 	logger := logger.New(io.Discard, logger.DEBUG)
 
 	core := &Core{
@@ -34,7 +34,7 @@ func TestUserService_Create(t *testing.T) {
 	tests := []struct {
 		name    string
 		user    *models.User
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		wantErr bool
 	}{
 		{
@@ -46,20 +46,20 @@ func TestUserService_Create(t *testing.T) {
 				Status:   "active",
 				Role:     "user",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("CreateUser", mock.Anything, mock.AnythingOfType("*models.User")).
 					Return(nil)
 			},
 			wantErr: false,
 		},
 		{
-			name: "MockRepository error",
+			name: "Repository error",
 			user: &models.User{
 				Name:     "Test User",
 				Username: "testuser",
 				Email:    "test@example.com",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("CreateUser", mock.Anything, mock.AnythingOfType("*models.User")).
 					Return(errors.New("database error"))
 			},
@@ -89,7 +89,7 @@ func TestUserService_Get(t *testing.T) {
 	tests := []struct {
 		name    string
 		userID  int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		want    *models.User
 		wantErr bool
 		errType error
@@ -97,7 +97,7 @@ func TestUserService_Get(t *testing.T) {
 		{
 			name:   "existing user",
 			userID: 1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("GetUser", mock.Anything, 1).Return(&models.User{
 					Base: models.Base{
 						ID:        1,
@@ -124,7 +124,7 @@ func TestUserService_Get(t *testing.T) {
 		{
 			name:   "non-existent user",
 			userID: 999,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("GetUser", mock.Anything, 999).Return(nil, storage.ErrNotFound)
 			},
 			want:    nil,
@@ -159,7 +159,7 @@ func TestUserService_List(t *testing.T) {
 		name    string
 		limit   int
 		offset  int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		want    *models.PaginatedResponse
 		wantErr bool
 	}{
@@ -167,7 +167,7 @@ func TestUserService_List(t *testing.T) {
 			name:   "successful list",
 			limit:  10,
 			offset: 0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				users := []*models.User{
 					{Base: models.Base{ID: 1}, Name: "User 1"},
 					{Base: models.Base{ID: 2}, Name: "User 2"},
@@ -188,10 +188,10 @@ func TestUserService_List(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "MockRepository error",
+			name:   "Repository error",
 			limit:  10,
 			offset: 0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("ListUsers", mock.Anything, 10, 0).Return([]*models.User(nil), 0, errors.New("database error"))
 			},
 			want:    nil,
@@ -221,7 +221,7 @@ func TestUserService_Update(t *testing.T) {
 	tests := []struct {
 		name    string
 		user    *models.User
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		wantErr bool
 	}{
 		{
@@ -230,7 +230,7 @@ func TestUserService_Update(t *testing.T) {
 				Base: models.Base{ID: 1},
 				Name: "Updated Name",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("UpdateUser", mock.Anything, mock.AnythingOfType("*models.User")).
 					Return(nil)
 			},
@@ -242,7 +242,7 @@ func TestUserService_Update(t *testing.T) {
 				Base: models.Base{ID: 999},
 				Name: "Updated Name",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("UpdateUser", mock.Anything, mock.AnythingOfType("*models.User")).
 					Return(storage.ErrNotFound)
 			},
@@ -271,13 +271,13 @@ func TestUserService_Delete(t *testing.T) {
 	tests := []struct {
 		name    string
 		userID  int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		wantErr bool
 	}{
 		{
 			name:   "successful deletion",
 			userID: 1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("DeleteUser", mock.Anything, 1).Return(nil)
 			},
 			wantErr: false,
@@ -285,7 +285,7 @@ func TestUserService_Delete(t *testing.T) {
 		{
 			name:   "delete non-existent user",
 			userID: 999,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("DeleteUser", mock.Anything, 999).Return(storage.ErrNotFound)
 			},
 			wantErr: true,

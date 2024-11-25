@@ -17,8 +17,8 @@ import (
 	null "github.com/volatiletech/null/v9"
 )
 
-func setupRuleTestCore(t *testing.T) (*Core, *mocks.MockRepository) {
-	mockRepo := mocks.NewMockRepository(t)
+func setupRuleTestCore(t *testing.T) (*Core, *mocks.Repository) {
+	mockRepo := mocks.NewRepository(t)
 	logger := logger.New(io.Discard, logger.DEBUG)
 
 	core := &Core{
@@ -34,7 +34,7 @@ func TestRuleService_Create(t *testing.T) {
 	tests := []struct {
 		name    string
 		rule    *models.ForwardRule
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		wantErr bool
 	}{
 		{
@@ -45,7 +45,7 @@ func TestRuleService_Create(t *testing.T) {
 				Receiver: "receiver@example.com",
 				Subject:  "Test Subject",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("CreateRule", mock.Anything, mock.AnythingOfType("*models.ForwardRule")).
 					Return(nil)
 			},
@@ -59,7 +59,7 @@ func TestRuleService_Create(t *testing.T) {
 				Receiver: "receiver@example.com",
 				Subject:  "Test Subject",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("CreateRule", mock.Anything, mock.AnythingOfType("*models.ForwardRule")).
 					Return(errors.New("database error"))
 			},
@@ -89,7 +89,7 @@ func TestRuleService_Get(t *testing.T) {
 	tests := []struct {
 		name    string
 		id      int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		want    *models.ForwardRule
 		wantErr bool
 		errType error
@@ -97,7 +97,7 @@ func TestRuleService_Get(t *testing.T) {
 		{
 			name: "existing rule",
 			id:   1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("GetRule", mock.Anything, 1).Return(&models.ForwardRule{
 					Base: models.Base{
 						ID:        1,
@@ -126,7 +126,7 @@ func TestRuleService_Get(t *testing.T) {
 		{
 			name: "non-existent rule",
 			id:   999,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("GetRule", mock.Anything, 999).Return(nil, storage.ErrNotFound)
 			},
 			want:    nil,
@@ -160,7 +160,7 @@ func TestRuleService_Update(t *testing.T) {
 	tests := []struct {
 		name    string
 		rule    *models.ForwardRule
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		wantErr bool
 	}{
 		{
@@ -172,7 +172,7 @@ func TestRuleService_Update(t *testing.T) {
 				Receiver: "receiver@example.com",
 				Subject:  "Updated Subject",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("UpdateRule", mock.Anything, mock.AnythingOfType("*models.ForwardRule")).
 					Return(nil)
 			},
@@ -187,7 +187,7 @@ func TestRuleService_Update(t *testing.T) {
 				Receiver: "receiver@example.com",
 				Subject:  "Updated Subject",
 			},
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("UpdateRule", mock.Anything, mock.AnythingOfType("*models.ForwardRule")).
 					Return(storage.ErrNotFound)
 			},
@@ -216,13 +216,13 @@ func TestRuleService_Delete(t *testing.T) {
 	tests := []struct {
 		name    string
 		id      int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		wantErr bool
 	}{
 		{
 			name: "successful deletion",
 			id:   1,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("DeleteRule", mock.Anything, 1).Return(nil)
 			},
 			wantErr: false,
@@ -230,7 +230,7 @@ func TestRuleService_Delete(t *testing.T) {
 		{
 			name: "delete non-existent rule",
 			id:   999,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("DeleteRule", mock.Anything, 999).Return(storage.ErrNotFound)
 			},
 			wantErr: true,
@@ -260,7 +260,7 @@ func TestRuleService_ListByInbox(t *testing.T) {
 		inboxID int
 		limit   int
 		offset  int
-		mockFn  func(*mocks.MockRepository)
+		mockFn  func(*mocks.Repository)
 		want    *models.PaginatedResponse
 		wantErr bool
 	}{
@@ -269,7 +269,7 @@ func TestRuleService_ListByInbox(t *testing.T) {
 			inboxID: 1,
 			limit:   10,
 			offset:  0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				rules := []*models.ForwardRule{
 					{
 						Base:     models.Base{ID: 1},
@@ -318,7 +318,7 @@ func TestRuleService_ListByInbox(t *testing.T) {
 			inboxID: 1,
 			limit:   10,
 			offset:  0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("ListRulesByInbox", mock.Anything, 1, 10, 0).
 					Return([]*models.ForwardRule(nil), 0, errors.New("database error"))
 			},
@@ -330,7 +330,7 @@ func TestRuleService_ListByInbox(t *testing.T) {
 			inboxID: 2,
 			limit:   10,
 			offset:  0,
-			mockFn: func(m *mocks.MockRepository) {
+			mockFn: func(m *mocks.Repository) {
 				m.On("ListRulesByInbox", mock.Anything, 2, 10, 0).
 					Return([]*models.ForwardRule{}, 0, nil)
 			},
