@@ -51,6 +51,10 @@ type Queries struct {
 	GetMessage           *sqlx.Stmt `query:"get-message"`
 	ListMessagesByInbox  *sqlx.Stmt `query:"list-messages-by-inbox"`
 	CountMessagesByInbox *sqlx.Stmt `query:"count-messages-by-inbox"`
+	UpdateMessageReadStatus *sqlx.Stmt `query:"update-message-read-status"`
+	DeleteMessage         *sqlx.Stmt `query:"delete-message"`
+	ListMessagesByInboxWithReadFilter  *sqlx.Stmt `query:"list-messages-by-inbox-with-read-filter"`
+	CountMessagesByInboxWithReadFilter *sqlx.Stmt `query:"count-messages-by-inbox-with-read-filter"`
 
 	// User queries
 	ListUsers         *sqlx.Stmt `query:"list-users"`

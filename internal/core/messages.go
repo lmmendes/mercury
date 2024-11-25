@@ -43,10 +43,11 @@ func (s *MessageService) Get(ctx context.Context, id int) (*models.Message, erro
 	return message, nil
 }
 
-func (s *MessageService) ListByInbox(ctx context.Context, inboxID, limit, offset int) (*models.PaginatedResponse, error) {
-	s.core.Logger.Info("Listing messages for inbox %d with limit: %d and offset: %d", inboxID, limit, offset)
+func (s *MessageService) ListByInbox(ctx context.Context, inboxID int, limit, offset int, isRead *bool) (*models.PaginatedResponse, error) {
+	s.core.Logger.Info("Listing messages for inbox %d with limit: %d, offset: %d, isRead: %v",
+		inboxID, limit, offset, isRead)
 
-	messages, total, err := s.core.Repository.ListMessagesByInbox(ctx, inboxID, limit, offset)
+	messages, total, err := s.core.Repository.ListMessagesByInboxWithFilter(ctx, inboxID, isRead, limit, offset)
 	if err != nil {
 		s.core.Logger.Error("Failed to list messages: %v", err)
 		return nil, err
@@ -61,4 +62,40 @@ func (s *MessageService) ListByInbox(ctx context.Context, inboxID, limit, offset
 
 	s.core.Logger.Info("Successfully retrieved %d messages (total: %d)", len(messages), total)
 	return response, nil
+}
+
+func (s *MessageService) MarkAsRead(ctx context.Context, messageID int) error {
+	s.core.Logger.Debug("Marking message %d as read", messageID)
+
+	if err := s.core.Repository.UpdateMessageReadStatus(ctx, messageID, true); err != nil {
+		s.core.Logger.Error("Failed to mark message as read: %v", err)
+		return err
+	}
+
+	s.core.Logger.Info("Successfully marked message %d as read", messageID)
+	return nil
+}
+
+func (s *MessageService) MarkAsUnread(ctx context.Context, messageID int) error {
+	s.core.Logger.Debug("Marking message %d as unread", messageID)
+
+	if err := s.core.Repository.UpdateMessageReadStatus(ctx, messageID, false); err != nil {
+		s.core.Logger.Error("Failed to mark message as unread: %v", err)
+		return err
+	}
+
+	s.core.Logger.Info("Successfully marked message %d as unread", messageID)
+	return nil
+}
+
+func (s *MessageService) Delete(ctx context.Context, messageID int) error {
+	s.core.Logger.Debug("Deleting message with ID: %d", messageID)
+
+	if err := s.core.Repository.DeleteMessage(ctx, messageID); err != nil {
+		s.core.Logger.Error("Failed to delete message: %v", err)
+		return err
+	}
+
+	s.core.Logger.Info("Successfully deleted message with ID: %d", messageID)
+	return nil
 }

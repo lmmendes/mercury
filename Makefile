@@ -122,6 +122,7 @@ db-down:
 # Clean database volumes
 db-clean:
 	docker compose down -v
+	rm -rf ./tmp/postgres/*
 	docker volume rm inbox451_postgres_data || true
 	docker rm inbox451-db-1 || true
 

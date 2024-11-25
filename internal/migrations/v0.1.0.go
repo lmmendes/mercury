@@ -101,6 +101,7 @@ func V0_1_0(db *sqlx.DB, config *config.Config, log *log.Logger) error {
 			receiver VARCHAR(255) NOT NULL,
 			subject VARCHAR(200) NOT NULL,
 			body TEXT NOT NULL,
+			is_read BOOLEAN NOT NULL DEFAULT false,
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,

@@ -1,10 +1,10 @@
 meta {
-  name: Get Message
+  name: Delete Message
   type: http
-  seq: 2
+  seq: 5
 }
 
-get {
+delete {
   url: {{base_url}}/projects/1/inboxes/1/messages/1
   auth: none
 }
@@ -14,14 +14,8 @@ headers {
 }
 
 tests {
-  test("should return a single message", function() {
+  test("should delete message", function() {
     expect(res.status).to.equal(200);
-    expect(res.body).to.have.property('id');
-    expect(res.body).to.have.property('inbox_id');
-    expect(res.body).to.have.property('subject');
-    expect(res.body).to.have.property('sender');
-    expect(res.body).to.have.property('receiver');
-    expect(res.body).to.have.property('is_read').that.is.a('boolean');
   });
 
   test("should return 404 for non-existent message", function() {
