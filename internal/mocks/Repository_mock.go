@@ -351,6 +351,53 @@ func (_c *Repository_DeleteInbox_Call) RunAndReturn(run func(context.Context, in
 	return _c
 }
 
+// DeleteMessage provides a mock function with given fields: ctx, messageID
+func (_m *Repository) DeleteMessage(ctx context.Context, messageID int) error {
+	ret := _m.Called(ctx, messageID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteMessage")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int) error); ok {
+		r0 = rf(ctx, messageID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Repository_DeleteMessage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteMessage'
+type Repository_DeleteMessage_Call struct {
+	*mock.Call
+}
+
+// DeleteMessage is a helper method to define mock.On call
+//   - ctx context.Context
+//   - messageID int
+func (_e *Repository_Expecter) DeleteMessage(ctx interface{}, messageID interface{}) *Repository_DeleteMessage_Call {
+	return &Repository_DeleteMessage_Call{Call: _e.mock.On("DeleteMessage", ctx, messageID)}
+}
+
+func (_c *Repository_DeleteMessage_Call) Run(run func(ctx context.Context, messageID int)) *Repository_DeleteMessage_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int))
+	})
+	return _c
+}
+
+func (_c *Repository_DeleteMessage_Call) Return(_a0 error) *Repository_DeleteMessage_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Repository_DeleteMessage_Call) RunAndReturn(run func(context.Context, int) error) *Repository_DeleteMessage_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeleteProject provides a mock function with given fields: ctx, id
 func (_m *Repository) DeleteProject(ctx context.Context, id int) error {
 	ret := _m.Called(ctx, id)
@@ -1148,6 +1195,75 @@ func (_c *Repository_ListMessagesByInbox_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// ListMessagesByInboxWithFilter provides a mock function with given fields: ctx, inboxID, isRead, limit, offset
+func (_m *Repository) ListMessagesByInboxWithFilter(ctx context.Context, inboxID int, isRead *bool, limit int, offset int) ([]*models.Message, int, error) {
+	ret := _m.Called(ctx, inboxID, isRead, limit, offset)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListMessagesByInboxWithFilter")
+	}
+
+	var r0 []*models.Message
+	var r1 int
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, *bool, int, int) ([]*models.Message, int, error)); ok {
+		return rf(ctx, inboxID, isRead, limit, offset)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int, *bool, int, int) []*models.Message); ok {
+		r0 = rf(ctx, inboxID, isRead, limit, offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*models.Message)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int, *bool, int, int) int); ok {
+		r1 = rf(ctx, inboxID, isRead, limit, offset)
+	} else {
+		r1 = ret.Get(1).(int)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, int, *bool, int, int) error); ok {
+		r2 = rf(ctx, inboxID, isRead, limit, offset)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// Repository_ListMessagesByInboxWithFilter_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListMessagesByInboxWithFilter'
+type Repository_ListMessagesByInboxWithFilter_Call struct {
+	*mock.Call
+}
+
+// ListMessagesByInboxWithFilter is a helper method to define mock.On call
+//   - ctx context.Context
+//   - inboxID int
+//   - isRead *bool
+//   - limit int
+//   - offset int
+func (_e *Repository_Expecter) ListMessagesByInboxWithFilter(ctx interface{}, inboxID interface{}, isRead interface{}, limit interface{}, offset interface{}) *Repository_ListMessagesByInboxWithFilter_Call {
+	return &Repository_ListMessagesByInboxWithFilter_Call{Call: _e.mock.On("ListMessagesByInboxWithFilter", ctx, inboxID, isRead, limit, offset)}
+}
+
+func (_c *Repository_ListMessagesByInboxWithFilter_Call) Run(run func(ctx context.Context, inboxID int, isRead *bool, limit int, offset int)) *Repository_ListMessagesByInboxWithFilter_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int), args[2].(*bool), args[3].(int), args[4].(int))
+	})
+	return _c
+}
+
+func (_c *Repository_ListMessagesByInboxWithFilter_Call) Return(_a0 []*models.Message, _a1 int, _a2 error) *Repository_ListMessagesByInboxWithFilter_Call {
+	_c.Call.Return(_a0, _a1, _a2)
+	return _c
+}
+
+func (_c *Repository_ListMessagesByInboxWithFilter_Call) RunAndReturn(run func(context.Context, int, *bool, int, int) ([]*models.Message, int, error)) *Repository_ListMessagesByInboxWithFilter_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ListProjects provides a mock function with given fields: ctx, limit, offset
 func (_m *Repository) ListProjects(ctx context.Context, limit int, offset int) ([]*models.Project, int, error) {
 	ret := _m.Called(ctx, limit, offset)
@@ -1691,6 +1807,54 @@ func (_c *Repository_UpdateInbox_Call) Return(_a0 error) *Repository_UpdateInbox
 }
 
 func (_c *Repository_UpdateInbox_Call) RunAndReturn(run func(context.Context, *models.Inbox) error) *Repository_UpdateInbox_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateMessageReadStatus provides a mock function with given fields: ctx, messageID, isRead
+func (_m *Repository) UpdateMessageReadStatus(ctx context.Context, messageID int, isRead bool) error {
+	ret := _m.Called(ctx, messageID, isRead)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateMessageReadStatus")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, bool) error); ok {
+		r0 = rf(ctx, messageID, isRead)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Repository_UpdateMessageReadStatus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateMessageReadStatus'
+type Repository_UpdateMessageReadStatus_Call struct {
+	*mock.Call
+}
+
+// UpdateMessageReadStatus is a helper method to define mock.On call
+//   - ctx context.Context
+//   - messageID int
+//   - isRead bool
+func (_e *Repository_Expecter) UpdateMessageReadStatus(ctx interface{}, messageID interface{}, isRead interface{}) *Repository_UpdateMessageReadStatus_Call {
+	return &Repository_UpdateMessageReadStatus_Call{Call: _e.mock.On("UpdateMessageReadStatus", ctx, messageID, isRead)}
+}
+
+func (_c *Repository_UpdateMessageReadStatus_Call) Run(run func(ctx context.Context, messageID int, isRead bool)) *Repository_UpdateMessageReadStatus_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int), args[2].(bool))
+	})
+	return _c
+}
+
+func (_c *Repository_UpdateMessageReadStatus_Call) Return(_a0 error) *Repository_UpdateMessageReadStatus_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Repository_UpdateMessageReadStatus_Call) RunAndReturn(run func(context.Context, int, bool) error) *Repository_UpdateMessageReadStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }
