@@ -54,10 +54,12 @@ func (r *repository) ListInboxesByProject(ctx context.Context, projectID, limit,
 		return nil, 0, err
 	}
 
-	var inboxes []*models.Inbox
-	err = r.queries.ListInboxesByProject.SelectContext(ctx, &inboxes, projectID, limit, offset)
-	if err != nil {
-		return nil, 0, err
+	inboxes := []*models.Inbox{}
+	if total > 0 {
+		err = r.queries.ListInboxesByProject.SelectContext(ctx, &inboxes, projectID, limit, offset)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 
 	return inboxes, total, nil

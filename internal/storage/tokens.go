@@ -15,10 +15,12 @@ func (r *repository) ListTokensByUser(ctx context.Context, user_id int, limit, o
 		return nil, 0, err
 	}
 
-	var tokens []*models.Token
-	err = r.queries.ListTokensByUser.SelectContext(ctx, &tokens, user_id, limit, offset)
-	if err != nil {
-		return nil, 0, err
+	tokens := []*models.Token{}
+	if total > 0 {
+		err = r.queries.ListTokensByUser.SelectContext(ctx, &tokens, user_id, limit, offset)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 
 	return tokens, total, nil

@@ -13,10 +13,12 @@ func (r *repository) ListRules(ctx context.Context, limit, offset int) ([]*model
 		return nil, 0, err
 	}
 
-	var rules []*models.ForwardRule
-	err = r.queries.ListRules.SelectContext(ctx, &rules, limit, offset)
-	if err != nil {
-		return nil, 0, err
+	rules := []*models.ForwardRule{}
+	if total > 0 {
+		err = r.queries.ListRules.SelectContext(ctx, &rules, limit, offset)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 
 	return rules, total, nil
@@ -29,10 +31,12 @@ func (r *repository) ListRulesByInbox(ctx context.Context, inboxID, limit, offse
 		return nil, 0, err
 	}
 
-	var rules []*models.ForwardRule
-	err = r.queries.ListRulesByInbox.SelectContext(ctx, &rules, inboxID, limit, offset)
-	if err != nil {
-		return nil, 0, err
+	rules := []*models.ForwardRule{}
+	if total > 0 {
+		err = r.queries.ListRulesByInbox.SelectContext(ctx, &rules, inboxID, limit, offset)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 
 	return rules, total, nil

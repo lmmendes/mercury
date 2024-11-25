@@ -67,14 +67,17 @@ func (r *repository) ListMessagesByInboxWithFilter(ctx context.Context, inboxID 
 		return nil, 0, handleDBError(err)
 	}
 
-	var messages []*models.Message
-	if isRead == nil {
-		err = r.queries.ListMessagesByInbox.SelectContext(ctx, &messages, inboxID, limit, offset)
-	} else {
-		err = r.queries.ListMessagesByInboxWithReadFilter.SelectContext(ctx, &messages, inboxID, *isRead, limit, offset)
-	}
-	if err != nil {
-		return nil, 0, handleDBError(err)
+	messages := []*models.Message{}
+
+	if total > 0 {
+		if isRead == nil {
+			err = r.queries.ListMessagesByInbox.SelectContext(ctx, &messages, inboxID, limit, offset)
+		} else {
+			err = r.queries.ListMessagesByInboxWithReadFilter.SelectContext(ctx, &messages, inboxID, *isRead, limit, offset)
+		}
+		if err != nil {
+			return nil, 0, handleDBError(err)
+		}
 	}
 
 	return messages, total, nil
