@@ -38,6 +38,14 @@ func NewServer(core *core.Core) *Server {
 		echo: e,
 	}
 
+	// Add core to http context
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c.Set("core", core)
+			return next(c)
+		}
+	})
+
 	// Add timeout middleware with a 30-second timeout
 	e.Use(middleware.TimeoutMiddleware(30 * time.Second))
 
