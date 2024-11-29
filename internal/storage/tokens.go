@@ -15,10 +15,12 @@ func (r *repository) ListTokensByUser(ctx context.Context, user_id int, limit, o
 		return nil, 0, err
 	}
 
-	var tokens []*models.Token
-	err = r.queries.ListTokensByUser.SelectContext(ctx, &tokens, user_id, limit, offset)
-	if err != nil {
-		return nil, 0, err
+	tokens := []*models.Token{}
+	if total > 0 {
+		err = r.queries.ListTokensByUser.SelectContext(ctx, &tokens, user_id, limit, offset)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 
 	return tokens, total, nil
@@ -46,11 +48,7 @@ func (r *repository) CreateToken(ctx context.Context, token *models.Token) error
 		&token.CreatedAt,
 		&token.UpdatedAt,
 	)
-	if err != nil {
-		return handleDBError(err)
-	}
-
-	return nil
+	return handleDBError(err)
 }
 
 func (r *repository) DeleteToken(ctx context.Context, tokenID int) error {

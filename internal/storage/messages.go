@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+
 	"inbox451/internal/models"
 )
 
@@ -28,10 +29,13 @@ func (r *repository) ListMessagesByInbox(ctx context.Context, inboxID, limit, of
 		return nil, 0, handleDBError(err)
 	}
 
-	var messages []*models.Message
-	err = r.queries.ListMessagesByInbox.SelectContext(ctx, &messages, inboxID, limit, offset)
-	if err != nil {
-		return nil, 0, handleDBError(err)
+	messages := []*models.Message{}
+
+	if total > 0 {
+		err = r.queries.ListMessagesByInbox.SelectContext(ctx, &messages, inboxID, limit, offset)
+		if err != nil {
+			return nil, 0, handleDBError(err)
+		}
 	}
 
 	return messages, total, nil
@@ -66,14 +70,17 @@ func (r *repository) ListMessagesByInboxWithFilter(ctx context.Context, inboxID 
 		return nil, 0, handleDBError(err)
 	}
 
-	var messages []*models.Message
-	if isRead == nil {
-		err = r.queries.ListMessagesByInbox.SelectContext(ctx, &messages, inboxID, limit, offset)
-	} else {
-		err = r.queries.ListMessagesByInboxWithReadFilter.SelectContext(ctx, &messages, inboxID, *isRead, limit, offset)
-	}
-	if err != nil {
-		return nil, 0, handleDBError(err)
+	messages := []*models.Message{}
+
+	if total > 0 {
+		if isRead == nil {
+			err = r.queries.ListMessagesByInbox.SelectContext(ctx, &messages, inboxID, limit, offset)
+		} else {
+			err = r.queries.ListMessagesByInboxWithReadFilter.SelectContext(ctx, &messages, inboxID, *isRead, limit, offset)
+		}
+		if err != nil {
+			return nil, 0, handleDBError(err)
+		}
 	}
 
 	return messages, total, nil

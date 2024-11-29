@@ -13,10 +13,12 @@ func (r *repository) ListProjects(ctx context.Context, limit, offset int) ([]*mo
 		return nil, 0, err
 	}
 
-	var projects []*models.Project = make([]*models.Project, 0)
-	err = r.queries.ListProjects.SelectContext(ctx, &projects, limit, offset)
-	if err != nil {
-		return nil, 0, err
+	projects := []*models.Project{}
+	if total > 0 {
+		err = r.queries.ListProjects.SelectContext(ctx, &projects, limit, offset)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 
 	return projects, total, nil
@@ -29,10 +31,12 @@ func (r *repository) ListProjectsByUser(ctx context.Context, userID int, limit i
 		return nil, 0, err
 	}
 
-	var projects []*models.Project = make([]*models.Project, 0)
-	err = r.queries.ListProjectsByUser.SelectContext(ctx, &projects, userID, limit, offset)
-	if err != nil {
-		return nil, 0, err
+	projects := []*models.Project{}
+	if total > 0 {
+		err = r.queries.ListProjectsByUser.SelectContext(ctx, &projects, userID, limit, offset)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 
 	return projects, total, nil
@@ -45,18 +49,21 @@ func (r *repository) GetProject(ctx context.Context, id int) (*models.Project, e
 }
 
 func (r *repository) CreateProject(ctx context.Context, project *models.Project) error {
-	return r.queries.CreateProject.QueryRowContext(ctx, project.Name).
+	err := r.queries.CreateProject.QueryRowContext(ctx, project.Name).
 		Scan(&project.ID, &project.CreatedAt, &project.UpdatedAt)
+	return handleDBError(err)
 }
 
 func (r *repository) UpdateProject(ctx context.Context, project *models.Project) error {
-	return r.queries.UpdateProject.QueryRowContext(ctx, project.Name, project.ID).
+	err := r.queries.UpdateProject.QueryRowContext(ctx, project.Name, project.ID).
 		Scan(&project.UpdatedAt)
+	return handleDBError(err)
 }
 
 func (r *repository) ProjectAddUser(ctx context.Context, projectUser *models.ProjectUser) error {
-	return r.queries.AddUserToProject.QueryRowContext(ctx, projectUser.ProjectID, projectUser.UserID, projectUser.Role).
+	err := r.queries.AddUserToProject.QueryRowContext(ctx, projectUser.ProjectID, projectUser.UserID, projectUser.Role).
 		Scan(&projectUser.CreatedAt, &projectUser.UpdatedAt)
+	return handleDBError(err)
 }
 
 func (r *repository) DeleteProject(ctx context.Context, id int) error {
