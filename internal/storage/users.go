@@ -29,13 +29,7 @@ func (r *repository) ListUsers(ctx context.Context, limit, offset int) ([]*model
 func (r *repository) GetUser(ctx context.Context, userID int) (*models.User, error) {
 	var user models.User
 	err := r.queries.GetUser.GetContext(ctx, &user, userID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &user, nil
+	return &user, handleDBError(err)
 }
 
 func (r *repository) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
@@ -78,14 +72,7 @@ func (r *repository) UpdateUser(ctx context.Context, user *models.User) error {
 func (r *repository) DeleteUser(ctx context.Context, id int) error {
 	result, err := r.queries.DeleteUser.ExecContext(ctx, id)
 	if err != nil {
-		return err
+		return handleDBError(err)
 	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return errors.New("user not found")
-	}
-	return nil
+	return handleRowsAffected(result)
 }

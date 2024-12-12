@@ -47,12 +47,12 @@ type Queries struct {
 	CountRules        *sqlx.Stmt `query:"count-rules"`
 
 	// Message queries
-	CreateMessage        *sqlx.Stmt `query:"create-message"`
-	GetMessage           *sqlx.Stmt `query:"get-message"`
-	ListMessagesByInbox  *sqlx.Stmt `query:"list-messages-by-inbox"`
-	CountMessagesByInbox *sqlx.Stmt `query:"count-messages-by-inbox"`
-	UpdateMessageReadStatus *sqlx.Stmt `query:"update-message-read-status"`
-	DeleteMessage         *sqlx.Stmt `query:"delete-message"`
+	CreateMessage                      *sqlx.Stmt `query:"create-message"`
+	GetMessage                         *sqlx.Stmt `query:"get-message"`
+	ListMessagesByInbox                *sqlx.Stmt `query:"list-messages-by-inbox"`
+	CountMessagesByInbox               *sqlx.Stmt `query:"count-messages-by-inbox"`
+	UpdateMessageReadStatus            *sqlx.Stmt `query:"update-message-read-status"`
+	DeleteMessage                      *sqlx.Stmt `query:"delete-message"`
 	ListMessagesByInboxWithReadFilter  *sqlx.Stmt `query:"list-messages-by-inbox-with-read-filter"`
 	CountMessagesByInboxWithReadFilter *sqlx.Stmt `query:"count-messages-by-inbox-with-read-filter"`
 
